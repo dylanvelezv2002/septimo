@@ -41,7 +41,7 @@
         </p>
         <ul class="mt-6 space-y-2 text-slate-700 text-sm">
           <li>• Parciales: 1 y 2</li>
-          <li>• Validación de nombre de archivo obligatoria</li>
+          <li>• Validación del nombre de archivo obligatoria</li>
           <li>• Registro automático en Google Sheets y Drive</li>
         </ul>
       </div>
@@ -135,7 +135,7 @@
               <div class="md:col-span-2 bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-2">
                 <p class="text-sm">
                   Nombre sugerido (base):
-                  <code class="font-mono text-[var(--brand)]" id="nombre-ejemplo">SEMANA_1_NOMBRE_APELLIDO_01</code>
+                  <code class="font-mono text-[var(--brand)]" id="nombre-ejemplo">ABBR_SEMANA_1_NOMBRE_APELLIDO_01</code>
                 </p>
                 <div class="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-2 items-center">
                   <div>
@@ -173,7 +173,9 @@
                       <th class="text-left px-4 py-2">Archivo</th>
                     </tr>
                   </thead>
-                  <tbody id="envios-tbody"></tbody>
+                  <tbody id="envios-tbody">
+                    <!-- estado vacío -->
+                  </tbody>
                 </table>
               </div>
             </section>
@@ -188,11 +190,14 @@
     const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzMWfuwghGGXh652PYLHfFH54HM-8S5T3IS7TyXTOXfrp2v3uZCdYyUTdYWvVXbax6-/exec';
     const SEMANAS_POR_PARCIAL = 15;
     const SIZE_LIMIT = 25 * 1024 * 1024;
+
     const TIPOS_PERMITIDOS = [
       'application/pdf','application/vnd.openxmlformats-officedocument.wordprocessingml.document','application/msword',
       'application/vnd.openxmlformats-officedocument.presentationml.presentation','application/vnd.ms-powerpoint',
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet','application/vnd.ms-excel','image/jpeg','image/png'
     ];
+
+    // Materias y abreviaturas (debe coincidir con backend)
     const MATERIAS = [
       'Marco Legal para la Gestión del Riesgo',
       'Administración',
@@ -201,6 +206,43 @@
       'Evaluación de Vulnerabilidades',
       'Cambio Climático'
     ];
+    const MATERIA_ABBR = {
+      'Marco Legal para la Gestión del Riesgo': 'MLGR',
+      'Administración': 'ADM',
+      'Sistemas de Información Geográfica Aplicado': 'SIG',
+      'Evaluación de Amenazas': 'EA',
+      'Evaluación de Vulnerabilidades': 'EV',
+      'Cambio Climático': 'CC'
+    };
+
+    /* ============ SESIÓN PERSISTENTE ============ */
+    const SESSION_KEY = 'sesionAlumno';
+    const SESSION_TTL_MIN = 180; // 3 horas
+    const now = ()=>Date.now();
+
+    const saveSession = (student)=>{
+      localStorage.setItem(SESSION_KEY, JSON.stringify({ student, ts: now() }));
+    };
+    const loadSession = ()=>{
+      try{
+        const raw = localStorage.getItem(SESSION_KEY);
+        if(!raw) return null;
+        const obj = JSON.parse(raw);
+        if(!obj || !obj.student) return null;
+        const ageMin = (now() - (obj.ts||0)) / 60000;
+        if(ageMin > SESSION_TTL_MIN) { localStorage.removeItem(SESSION_KEY); return null; }
+        return obj.student;
+      }catch{ return null; }
+    };
+    const touchSession = ()=>{
+      try{
+        const raw = localStorage.getItem(SESSION_KEY);
+        if(!raw) return;
+        const obj = JSON.parse(raw); obj.ts = now();
+        localStorage.setItem(SESSION_KEY, JSON.stringify(obj));
+      }catch{}
+    };
+    const clearSession = ()=> localStorage.removeItem(SESSION_KEY);
 
     /* ============ HELPERS ============ */
     const $ = (id)=>document.getElementById(id);
@@ -209,10 +251,11 @@
     const pad2=(n)=>String(n).padStart(2,'0');
     const getExt=(name)=>{ const m = String(name).match(/\.([^.]+)$/); return m? m[1] : ''; };
 
-    const nombreEsperado=(semana,nombres,apellidos,num)=>{
+    const abbr=(materia)=> MATERIA_ABBR[materia] || 'ABBR';
+    const nombreEsperado=(materia,semana,nombres,apellidos,num)=>{
       const nom=slugUpper(nombres.split(' ')[0]||'NOMBRE');
       const ape=slugUpper(apellidos.split(' ')[0]||'APELLIDO');
-      return `SEMANA_${semana}_${nom}_${ape}_${pad2(num)}`
+      return `${abbr(materia)}_SEMANA_${semana}_${nom}_${ape}_${pad2(num)}`
     };
 
     const toggleViews=(showLogin)=>{
@@ -247,6 +290,7 @@
     let alumno=null;
     let currentExt='';
 
+    // Pinta materias
     (function fillMaterias(){
       const sel = $('materia');
       MATERIAS.forEach(m=>{
@@ -269,9 +313,10 @@
     };
 
     const refreshEjemplo=()=>{
+      const materia=$('materia').value || '';
       const semana=$('semana').value||'1';
       const num=$('numeroTarea').value||'1';
-      const ejemplo=nombreEsperado(semana, alumno?.nombres||'NOMBRE', alumno?.apellidos||'APELLIDO', num);
+      const ejemplo=nombreEsperado(materia, semana, alumno?.nombres||'NOMBRE', alumno?.apellidos||'APELLIDO', num);
       $('nombre-ejemplo').textContent=ejemplo;
       if(currentExt){ $('nombre-final').placeholder = `${ejemplo}.${currentExt}`; }
     };
@@ -307,13 +352,11 @@
         const text = await res.text();
         let data;
         try { data = JSON.parse(text); }
-        catch {
-          console.error('Respuesta no JSON:', text);
-          return Swal.fire({icon:'error', title:'No es JSON', html:'Verifica /exec + permisos.'});
-        }
+        catch { return Swal.fire({icon:'error', title:'No es JSON', html:'Verifica /exec + permisos.'}); }
 
         if(data.ok){
           alumno=data.student;
+          saveSession(alumno);
           $('alumno-nombre').textContent=`${alumno.nombres} ${alumno.apellidos}`;
           $('alumno-cedula').textContent=alumno.cedula;
           toggleViews(false); renderSemanas(); refreshEjemplo(); Swal.close();
@@ -322,15 +365,28 @@
           Swal.fire({icon:'error',title:'No autorizado',text:'La cédula no está registrada.'});
         }
       }catch(err){
-        console.error(err);
         Swal.fire({icon:'error',title:'Error de conexión',text:'Revisa la URL /exec.'});
       }
     });
 
-    $('parcial').addEventListener('change', ()=>{renderSemanas(); refreshEjemplo();});
-    $('semana').addEventListener('change', refreshEjemplo);
-    $('numeroTarea').addEventListener('input', refreshEjemplo);
-    $('btn-salir').addEventListener('click', ()=>{ alumno=null; toggleViews(true); $('form-login').reset(); });
+    $('parcial').addEventListener('change', ()=>{renderSemanas(); refreshEjemplo(); touchSession();});
+    $('semana').addEventListener('change', ()=>{refreshEjemplo(); touchSession();});
+    $('materia').addEventListener('change', ()=>{refreshEjemplo(); touchSession();});
+    $('numeroTarea').addEventListener('input', ()=>{refreshEjemplo(); touchSession();});
+
+    $('btn-salir').addEventListener('click', ()=>{
+      alumno=null; clearSession(); toggleViews(true); $('form-login').reset();
+    });
+
+    // Restaurar sesión al cargar
+    (function restore(){
+      const s = loadSession();
+      if(!s) return;
+      alumno = s;
+      $('alumno-nombre').textContent=`${alumno.nombres} ${alumno.apellidos}`;
+      $('alumno-cedula').textContent=alumno.cedula;
+      toggleViews(false); renderSemanas(); refreshEjemplo(); cargarMisEnvios();
+    })();
 
     /* ============ SUBIDA (JSON base64, sin Content-Type) ============ */
     $('form-upload').addEventListener('submit', async (e)=>{
@@ -373,7 +429,8 @@
       }
 
       Swal.showLoading();
-      // → a base64 (sin encabezado para evitar preflight)
+      touchSession();
+
       const base64 = await new Promise((ok,err)=>{
         const fr=new FileReader();
         fr.onload=()=>ok(String(fr.result).split(',')[1]);
@@ -402,12 +459,11 @@
 
         if(res.ok && data && data.ok){
           Swal.fire({icon:'success',title:'¡Enviado!',html:`Se subió correctamente.<br><a class="text-blue-600 underline" target="_blank" href="${data.fileUrl}">Ver en Drive</a>`});
-          $('form-upload').reset(); currentExt=''; renderSemanas(); $('nombre-final').value=''; cargarMisEnvios();
+          $('form-upload').reset(); currentExt=''; renderSemanas(); $('nombre-final').value=''; cargarMisEnvios(); touchSession();
         }else{
           Swal.fire({icon:'error',title:'Error',text:(data&&data.message)||`No se pudo subir. Estado ${res.status}`});
         }
       }catch(err){
-        console.error(err);
         Swal.fire({icon:'error',title:'Error de conexión',text:'Intenta nuevamente.'});
       }
     });
@@ -418,14 +474,12 @@
       try{
         const res=await fetch(`${SCRIPT_URL}?action=list&cedula=${encodeURIComponent(alumno.cedula)}`);
         const text = await res.text();
-        let data;
-        try { data = JSON.parse(text); }
-        catch { console.warn('Respuesta no JSON en list:', text); return; }
-
+        let data; try { data = JSON.parse(text); } catch { data=null; }
         const tbody=$('envios-tbody');
         tbody.innerHTML='';
-        if(data.ok && Array.isArray(data.items)){
-          document.getElementById('mis-envios').classList.remove('hidden');
+        document.getElementById('mis-envios').classList.remove('hidden');
+
+        if(data && data.ok && Array.isArray(data.items) && data.items.length){
           data.items.forEach(r=>{
             const tr=document.createElement('tr');
             tr.innerHTML=`
@@ -437,10 +491,16 @@
               <td class="px-4 py-2"><a class="text-blue-600 underline" target="_blank" href="${r.fileUrl}">${r.filename}</a></td>`;
             tbody.appendChild(tr);
           });
+        }else{
+          const tr=document.createElement('tr');
+          tr.innerHTML = `<td class="px-4 py-4 text-slate-500 italic" colspan="6">Sin envíos registrados aún.</td>`;
+          tbody.appendChild(tr);
         }
-      }catch(err){ console.warn('No se pudo cargar envíos',err); }
+      }catch(err){
+        const tbody=$('envios-tbody');
+        tbody.innerHTML = `<tr><td class="px-4 py-4 text-red-600" colspan="6">No se pudo cargar la tabla.</td></tr>`;
+      }
     }
   </script>
 </body>
 </html>
-
