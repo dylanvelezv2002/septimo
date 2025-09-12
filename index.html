@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Gestión de Estudiantes Séptimo A</title>
+  <title>Gestión de Estudiantes</title>
 
   <!-- Tailwind -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -273,20 +273,15 @@
       const num=$('numeroTarea').value||'1';
       const ejemplo=nombreEsperado(semana, alumno?.nombres||'NOMBRE', alumno?.apellidos||'APELLIDO', num);
       $('nombre-ejemplo').textContent=ejemplo;
-      // si ya sabemos extensión, actualiza nombre final sugerido
-      if(currentExt){
-        $('nombre-final').placeholder = `${ejemplo}.${currentExt}`;
-      }
+      if(currentExt){ $('nombre-final').placeholder = `${ejemplo}.${currentExt}`; }
     };
 
-    // Copiar sugerido (base)
     $('btn-aplicar-nombre')?.addEventListener('click', ()=>{
       const base = $('nombre-ejemplo').textContent.trim();
       const ext = currentExt || 'pdf';
       $('nombre-final').value = `${base}.${ext}`;
     });
 
-    // Al elegir archivo: detecta extensión y sugiere nombre final
     $('archivo').addEventListener('change', ()=>{
       const f = $('archivo').files[0];
       if(!f){ currentExt=''; return; }
@@ -340,7 +335,7 @@
     $('numeroTarea').addEventListener('input', refreshEjemplo);
     $('btn-salir').addEventListener('click', ()=>{ alumno=null; toggleViews(true); $('form-login').reset(); });
 
-    /* ============ SUBIDA ============ */
+    /* ============ SUBIDA (FormData / multipart) ============ */
     $('form-upload').addEventListener('submit', async (e)=>{
       e.preventDefault();
       if(!alumno) return Swal.fire({icon:'error',title:'Sesión',text:'Inicia sesión con tu cédula.'});
@@ -350,7 +345,7 @@
       const semana=$('semana').value;
       const num=$('numeroTarea').value;
       const file=$('archivo').files[0];
-      let finalName = ($('nombre-final').value || '').trim();
+      let finalName=($('nombre-final').value||'').trim();
 
       if(!materia||!parcial||!semana||!num||!file)
         return Swal.fire({icon:'warning',title:'Campos incompletos',text:'Completa todos los campos.'});
@@ -361,63 +356,52 @@
       if(!TIPOS_PERMITIDOS.includes(file.type))
         return Swal.fire({icon:'warning',title:'Formato no permitido',text:'Sube PDF/DOCX/PPTX/XLSX/JPG/PNG.'});
 
-      const esperado = $('nombre-ejemplo').textContent.trim();
-      const ext = getExt(finalName) || getExt(file.name) || currentExt || 'pdf';
-      const baseFinal = finalName.replace(/\.[^.]+$/,'').trim();
+      const esperado=$('nombre-ejemplo').textContent.trim();
+      const ext=(file.name.match(/\.([^.]+)$/)||['','pdf'])[1];
+      const baseFinal=finalName.replace(/\.[^.]+$/,'').trim();
 
-      // Si el nombre final no coincide con el requerido, proponemos renombrar automáticamente
-      if(baseFinal !== esperado){
+      if(baseFinal!==esperado){
         const { isConfirmed } = await Swal.fire({
           icon:'question',
           title:'Renombrar archivo',
           html:`El nombre debe ser <code>${esperado}</code>.<br><br>¿Deseas que el sistema lo renombre automáticamente antes de enviar?`,
           showCancelButton:true, confirmButtonText:'Sí, renombrar', cancelButtonText:'Cancelar'
         });
-        if(!isConfirmed) return; // usuario canceló
+        if(!isConfirmed) return;
         finalName = `${esperado}.${ext}`;
         $('nombre-final').value = finalName;
-      }else{
-        // asegura que tenga extensión
-        if(!/\.[^.]+$/.test(finalName)) finalName = `${baseFinal}.${ext}`;
+      }else if(!/\.[^.]+$/.test(finalName)){
+        finalName = `${baseFinal}.${ext}`;
+        $('nombre-final').value = finalName;
       }
 
+      const fd = new FormData();
+      fd.append('action','upload');
+      fd.append('cedula', alumno.cedula);
+      fd.append('materia', String(materia));
+      fd.append('parcial', String(parcial));
+      fd.append('semana', String(semana));
+      fd.append('numeroTarea', String(num).padStart(2,'0'));
+      fd.append('nombres', alumno.nombres);
+      fd.append('apellidos', alumno.apellidos);
+      fd.append('filename', finalName);
+      fd.append('file', file, finalName);   // se envía con el nombre final
+
       Swal.showLoading();
-      const base64=await new Promise((ok,err)=>{
-        const fr=new FileReader(); fr.onload=()=>ok(String(fr.result).split(',')[1]);
-        fr.onerror=err; fr.readAsDataURL(file);
-      });
-
       try{
-        const payload={
-          action:'upload',
-          cedula:alumno.cedula,
-          materia:String(materia),
-          parcial:String(parcial),
-          semana:String(semana),
-          numeroTarea:pad2(Number(num)),
-          nombres:alumno.nombres,
-          apellidos:alumno.apellidos,
-          filename:finalName,               // ← nombre final que se guardará en Drive
-          mimeType:file.type,
-          data:base64
-        };
-
-        const res=await fetch(SCRIPT_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+        const res = await fetch(SCRIPT_URL, { method:'POST', body: fd });
         const text = await res.text();
-        let data;
-        try { data = JSON.parse(text); }
-        catch { console.error('No JSON en upload:', text);
-          return Swal.fire({icon:'error',title:'Subida fallida',text:'El WebApp no devolvió JSON.'}); }
+        let data; try{ data = JSON.parse(text); }catch(e){ data=null; }
 
-        if(data.ok){
+        if(res.ok && data && data.ok){
           Swal.fire({icon:'success',title:'¡Enviado!',html:`Se subió correctamente.<br><a class="text-blue-600 underline" target="_blank" href="${data.fileUrl}">Ver en Drive</a>`});
-          $('form-upload').reset(); currentExt=''; renderSemanas(); refreshEjemplo(); cargarMisEnvios();
+          $('form-upload').reset(); renderSemanas(); $('nombre-final').value=''; cargarMisEnvios();
         }else{
-          Swal.fire({icon:'error',title:'Error',text:data.message||'No se pudo subir.'});
+          Swal.fire({icon:'error',title:'Error',text:(data&&data.message)||`No se pudo subir. Estado ${res.status}`});
         }
-      }catch(e){
-        console.error(e);
-        Swal.fire({icon:'error',title:'Error de conexión',text:'Intenta nuevamente.'});
+      }catch(err){
+        console.error(err);
+        Swal.fire({icon:'error',title:'Error de conexión',text:'Revisa el despliegue del WebApp y vuelve a intentar.'});
       }
     });
 
@@ -452,4 +436,3 @@
   </script>
 </body>
 </html>
-
