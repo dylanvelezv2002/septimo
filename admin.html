@@ -4,8 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Panel Admin · SEPTIMO</title>
+
+<!-- Tailwind -->
 <script src="https://cdn.tailwindcss.com"></script>
+<!-- Inter -->
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
 <style>
   :root{--brand:#2F338F}
   body{font-family:"Inter",system-ui,-apple-system,Segoe UI,Roboto}
@@ -15,10 +19,14 @@
 </style>
 </head>
 <body class="bg-slate-50 text-slate-800">
+
   <header class="bg-white border-b">
     <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
       <h1 class="text-xl md:text-2xl font-semibold">Panel Admin</h1>
-      <div id="who" class="text-sm text-slate-500"></div>
+      <div class="flex items-center gap-3 text-sm">
+        <span id="who" class="text-slate-500"></span>
+        <button id="btnLogout" class="hidden px-3 py-1 rounded-md border border-slate-300">Salir</button>
+      </div>
     </div>
   </header>
 
@@ -26,7 +34,7 @@
     <!-- Login admin -->
     <section id="loginBox" class="card bg-white rounded-2xl p-6 md:p-8">
       <h2 class="text-lg font-semibold mb-2">Acceso administrador</h2>
-      <p class="text-slate-600 text-sm mb-4">Ingresa la clave de administración.</p>
+      <p class="text-slate-600 text-sm mb-4">Ingresa la clave de administración (ADMIN_KEY).</p>
       <div class="flex gap-3 items-center max-w-md">
         <input id="key" type="password" class="w-full rounded-lg border border-slate-300 px-3 py-2" placeholder="ADMIN_KEY">
         <button id="btnLogin" class="px-4 py-2 rounded-lg bg-[var(--brand)] text-white">Entrar</button>
@@ -129,7 +137,7 @@
 <script>
 /* ===== CONFIG ===== */
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzMWfuwghGGXh652PYLHfFH54HM-8S5T3IS7TyXTOXfrp2v3uZCdYyUTdYWvVXbax6-/exec';
-const ADMIN_KEY = ''; // <-- opcional: dejar vacío y pedir en login
+const ADMIN_KEY = ''; // deja vacío para escribirla en el login
 const SEMANAS = 15;
 
 /* ===== STATE ===== */
@@ -147,18 +155,22 @@ function toCsv(rows){
   const lines = [hdr.join(',')].concat(rows.map(r=>hdr.map(k=>esc(r[k])).join(',')));
   return lines.join('\n');
 }
+function showLogin(){ $('loginBox').classList.remove('hidden'); $('dashBox').classList.add('hidden'); $('btnLogout').classList.add('hidden'); }
+function showDash(){ $('loginBox').classList.add('hidden'); $('dashBox').classList.remove('hidden'); $('btnLogout').classList.remove('hidden'); }
 
-/* ===== Auth flow ===== */
-function showLogin(){ $('loginBox').classList.remove('hidden'); $('dashBox').classList.add('hidden'); }
-function showDash(){ $('loginBox').classList.add('hidden'); $('dashBox').classList.remove('hidden'); }
-
+/* ===== Auth ===== */
 $('btnLogin').onclick = async ()=>{
   const k = $('key').value.trim();
   if(!k) return;
   key = k; localStorage.setItem('ADMIN_KEY', key);
   await boot();
 };
+$('btnLogout').onclick = ()=>{
+  localStorage.removeItem('ADMIN_KEY'); key='';
+  showLogin(); $('who').textContent='';
+};
 
+/* ===== Inicio ===== */
 async function boot(){
   if(!key){ showLogin(); return; }
   $('who').textContent = 'Admin activo';
@@ -178,11 +190,13 @@ async function boot(){
 
     // Materias en filtros
     const mats = Array.from(new Set(all.map(x=>x.materia).filter(Boolean))).sort();
+    const mSel = $('fMateria'); mSel.innerHTML = '<option value="">Todas</option>';
     mats.forEach(m=>{
-      const op=document.createElement('option'); op.value=m; op.textContent=m; $('fMateria').appendChild(op);
+      const op=document.createElement('option'); op.value=m; op.textContent=m; mSel.appendChild(op);
     });
     // Semanas
-    for(let i=1;i<=SEMANAS;i++){ const op=document.createElement('option'); op.value=String(i); op.textContent=i; $('fSemana').appendChild(op); }
+    const sSel = $('fSemana'); sSel.innerHTML = '<option value="">Todas</option>';
+    for(let i=1;i<=SEMANAS;i++){ const op=document.createElement('option'); op.value=String(i); op.textContent=i; sSel.appendChild(op); }
 
     apply();
     showDash();
@@ -193,7 +207,7 @@ async function boot(){
   }
 }
 
-/* ===== Filters + table ===== */
+/* ===== Filtros + tabla ===== */
 function apply(){
   const mat = $('fMateria').value.trim();
   const par = $('fParcial').value.trim();
