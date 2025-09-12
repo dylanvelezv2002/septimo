@@ -54,7 +54,7 @@
         </div>
       </div>
 
-      <!-- Filtros faltantes -->
+      <!-- Filtros faltantes / enviados -->
       <div class="card rounded-2xl shadow p-6">
         <div class="flex flex-wrap items-end gap-3">
           <div class="grow">
@@ -85,7 +85,14 @@
           <a id="btnCarpeta" target="_blank" class="px-4 py-2 rounded-xl border hover:bg-slate-50 hidden">Abrir carpeta</a>
         </div>
         <p id="faltSummary" class="mt-3 text-slate-600"></p>
-        <div id="faltList" class="mt-2 grid sm:grid-cols-2 md:grid-cols-3 gap-2"></div>
+
+        <!-- Leyenda -->
+        <div class="mt-2 flex items-center gap-3 text-sm">
+          <span class="inline-flex items-center gap-2"><span class="inline-block w-3 h-3 rounded-full bg-red-500"></span> Faltante</span>
+          <span class="inline-flex items-center gap-2"><span class="inline-block w-3 h-3 rounded-full bg-emerald-500"></span> Enviado</span>
+        </div>
+
+        <div id="faltList" class="mt-3 grid sm:grid-cols-2 md:grid-cols-3 gap-2"></div>
       </div>
 
       <!-- Tabla registros -->
@@ -114,14 +121,13 @@
   const API_BASE = 'https://script.google.com/macros/s/AKfycbzMWfuwghGGXh652PYLHfFH54HM-8S5T3IS7TyXTOXfrp2v3uZCdYyUTdYWvVXbax6-/exec'; // <-- CAMBIAR
 
   /*********** STATE ***********/
-  const state = {
-    key: sessionStorage.getItem('ADMIN_KEY') || ''
-  };
+  const state = { key: sessionStorage.getItem('ADMIN_KEY') || '' };
 
   /*********** UTILS ***********/
   const $ = s => document.querySelector(s);
   const show = (el, v=true) => el.classList.toggle('hidden', !v);
   const q = o => new URLSearchParams(o).toString();
+  const normId = x => String(x||'').replace(/\D/g,'').replace(/^0+/, '') || '0';
 
   async function apiGet(params){
     const url = `${API_BASE}?${q(params)}`;
@@ -165,7 +171,7 @@
     });
   }
 
-  /*********** FLOWS ***********/
+  /*********** DASH ***********/
   async function loadKPIs(){
     const r = await apiGet({ action:'adminStats', key: state.key });
     const t = r.totals || {};
@@ -178,11 +184,7 @@
   async function loadTable(){
     const r = await apiGet({ action:'adminList', key: state.key });
     const items = r.items || [];
-    // Construimos headers a partir de llaves
-    const headers = ['fecha','cedula','nombres','apellidos','materia','parcial','semana','numeroTarea','filename','fileId','fileUrl']
-      .filter(h => items.length ? Object.prototype.hasOwnProperty.call(items[0], h) : true)
-      .map(h => h[0].toUpperCase() + h.slice(1));
-    // Adaptar rows a objeto por header-visible:
+    const headers = ['Fecha','Cedula','Nombres','Apellidos','Materia','Parcial','Semana','NumeroTarea','Filename','FileId','FileUrl'];
     const rows = items.map(it => ({
       'Fecha': it.fecha ?? '',
       'Cedula': it.cedula ?? '',
@@ -196,9 +198,10 @@
       'FileId': it.fileId ?? '',
       'FileUrl': it.fileUrl ?? ''
     }));
-    renderTable(['Fecha','Cedula','Nombres','Apellidos','Materia','Parcial','Semana','NumeroTarea','Filename','FileId','FileUrl'], rows);
+    renderTable(headers, rows);
   }
 
+  // NUEVO: faltantes VS enviados con colores (rojo/verde) y orden (rojos primero)
   async function showFaltantes(){
     const materia = $('#fltMateria').value.trim();
     const parcial = $('#fltParcial').value.trim();
@@ -210,17 +213,39 @@
       return;
     }
 
-    // Faltantes
-    const r = await apiGet({ action:'adminMissing', materia, parcial, semana, key: state.key });
-    const falt = r.faltantes || [];
-    $('#faltSummary').textContent = `Total: ${r.total} • Enviaron: ${r.enviados} • Faltantes: ${falt.length}`;
-    $('#faltList').innerHTML = falt.map(s =>
-      `<div class="px-3 py-2 rounded-xl border bg-white flex items-center justify-between">
-        <span class="text-sm">${s.cedula} — ${s.apellidos || ''} ${s.nombres || ''}</span>
-      </div>`
-    ).join('');
+    // 1) Faltantes (ya te da total y enviados)
+    const miss = await apiGet({ action:'adminMissing', materia, parcial, semana, key: state.key });
+    const faltSet = new Set((miss.faltantes || []).map(s => normId(s.cedula)));
+    $('#faltSummary').textContent = `Total: ${miss.total} • Enviaron: ${miss.enviados} • Faltantes: ${faltSet.size}`;
 
-    // Carpeta Drive
+    // 2) Todos los estudiantes
+    const all = await apiGet({ action:'adminStudents', key: state.key });
+    const students = (all.students || []).map(s => ({
+      ced: normId(s.cedula),
+      nombres: s.nombres || '',
+      apellidos: s.apellidos || ''
+    }));
+
+    // 3) También podemos calcular "enviados" exactos desde adminList (opcional),
+    //    pero como adminMissing ya cuenta, usamos faltSet para pintar.
+    //    Ordenar: primero faltantes (rojo), luego enviados (verde)
+    const ordered = students.sort((a,b)=>{
+      const af = faltSet.has(a.ced), bf = faltSet.has(b.ced);
+      if (af !== bf) return af ? -1 : 1; // rojos primero
+      return a.apellidos.localeCompare(b.apellidos, 'es');
+    });
+
+    $('#faltList').innerHTML = ordered.map(s=>{
+      const falta = faltSet.has(s.ced);
+      const color = falta
+        ? 'bg-red-100 text-red-700 border-red-300'
+        : 'bg-emerald-100 text-emerald-700 border-emerald-300';
+      return `<div class="px-3 py-2 rounded-xl border ${color}">
+        <span class="text-sm">${s.ced} — ${s.apellidos} ${s.nombres}</span>
+      </div>`;
+    }).join('');
+
+    // 4) Carpeta Drive
     try{
       const f = await apiGet({ action:'adminFolderId', materia, parcial, semana, key: state.key });
       const a = $('#btnCarpeta');
@@ -241,7 +266,7 @@
     const k = ($('#adminKey').value || '').trim();
     $('#loginMsg').classList.add('hidden');
     try{
-      // Probar con adminStats (si responde, la clave es válida)
+      // Validar clave probando un endpoint protegido
       await apiGet({ action:'adminStats', key: k });
       state.key = k;
       sessionStorage.setItem('ADMIN_KEY', k);
