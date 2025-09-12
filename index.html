@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Gestión de Estudiantes</title>
+
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- SweetAlert2 -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <!-- Inter font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet"/>
+
+  <style>
+    :root { --brand:#2F338F; }
+    html,body{height:100%}
+    body{font-family:"Inter",system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,"Helvetica Neue",Arial}
+    .card{box-shadow:0 20px 60px rgba(0,0,0,.08)}
+    input,select{ outline:none }
+    input:focus,select:focus{
+      border-color:var(--brand) !important;
+      box-shadow:0 0 0 6px rgba(47,51,143,.13);
+    }
+    .logo-row img{ height:48px; width:auto; object-fit:contain }
+  </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50 text-slate-800">
+
+  <div class="min-h-screen grid grid-cols-1 lg:grid-cols-2">
+    <aside class="hidden lg:flex flex-col justify-center bg-gradient-to-b from-white via-indigo-50 to-slate-50 text-slate-800 p-10">
+      <div class="max-w-lg mx-auto w-full">
+        <div class="flex items-center gap-4 mb-8 logo-row">
+          <img src="assets/ueb.png" alt="UEB" />
+          <img src="assets/rrd.png" alt="Carrera" />
+        </div>
+        <h1 class="text-3xl font-semibold leading-tight">Gestión de Estudiantes</h1>
+        <p class="mt-3 text-slate-600">
+          Portal para subir tareas por semanas y parciales. Acceso por número de cédula.
+        </p>
+        <ul class="mt-6 space-y-2 text-slate-700 text-sm">
+          <li>• Parciales: 1 y 2</li>
+          <li>• Validación de nombre de archivo obligatoria</li>
+          <li>• Registro automático en Google Sheets y Drive</li>
+        </ul>
+      </div>
+    </aside>
+
+    <main class="flex items-center justify-center p-6">
+      <div class="w-full max-w-2xl">
+        <div class="card bg-white rounded-2xl p-6 md:p-8">
+
+          <div class="flex lg:hidden items-center gap-4 mb-6 logo-row">
+            <img src="assets/ueb.png" alt="UEB" />
+            <img src="assets/rrd.png" alt="Carrera" />
+          </div>
+
+          <!-- LOGIN -->
+          <section id="view-login" class="space-y-6">
+            <header>
+              <h2 class="text-2xl md:text-3xl font-semibold">Ingreso por cédula</h2>
+              <p class="text-slate-600 mt-1">Ingresa tu número de cédula para acceder al panel de subida.</p>
+            </header>
+
+            <form id="form-login" class="space-y-3">
+              <div>
+                <label for="cedula" class="block text-sm font-medium text-slate-700 mb-1">Número de cédula</label>
+                <input id="cedula" name="cedula" inputmode="numeric"
+                       pattern="^(\d{10}|\d{13})$" maxlength="13"
+                       placeholder="Ej: 0102030405"
+                       class="w-full rounded-xl border border-slate-300 px-4 py-3" required>
+                <p class="text-xs text-slate-500 mt-1">* Debe estar registrado en la base de datos.</p>
+              </div>
+              <div class="flex justify-end">
+                <button type="submit"
+                        class="inline-flex justify-center items-center rounded-xl bg-[var(--brand)] text-white px-6 py-3 font-semibold hover:opacity-95 active:opacity-90 transition">
+                  Acceder
+                </button>
+              </div>
+            </form>
+          </section>
+
+          <!-- PANEL -->
+          <section id="view-panel" class="hidden">
+            <div class="flex items-center justify-between gap-4 flex-wrap">
+              <div>
+                <h2 class="text-2xl md:text-3xl font-semibold">Subir tarea</h2>
+                <p class="text-slate-600">Bienvenido, <span id="alumno-nombre" class="font-semibold"></span>. Cédula: <span id="alumno-cedula" class="font-mono"></span></p>
+              </div>
+              <button id="btn-salir" class="text-sm text-slate-600 hover:text-red-600">Salir</button>
+            </div>
+
+            <form id="form-upload" class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+              <!-- Materia -->
+              <div class="md:col-span-2">
+                <label class="block text-sm font-medium mb-1">Materia</label>
+                <select id="materia" class="w-full rounded-xl border border-slate-300 px-4 py-3" required>
+                  <option value="" disabled selected>Selecciona</option>
+                </select>
+                <p class="text-xs text-slate-500 mt-1">* Se usará para la carpeta en Drive.</p>
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium mb-1">Parcial</label>
+                <select id="parcial" class="w-full rounded-xl border border-slate-300 px-4 py-3" required>
+                  <option value="" disabled selected>Selecciona</option>
+                  <option value="1">Parcial 1</option>
+                  <option value="2">Parcial 2</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium mb-1">Semana</label>
+                <select id="semana" class="w-full rounded-xl border border-slate-300 px-4 py-3" required>
+                  <option value="" disabled selected>Selecciona</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium mb-1">N.º de tarea</label>
+                <input id="numeroTarea" type="number" min="1" max="99" placeholder="01"
+                       class="w-full rounded-xl border border-slate-300 px-4 py-3" required>
+                <p class="text-xs text-slate-500 mt-1">Usa 01, 02, 03…</p>
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium mb-1">Archivo</label>
+                <input id="archivo" type="file"
+                       class="w-full rounded-xl border border-slate-300 px-4 py-2 bg-white" required>
+                <p class="text-xs text-slate-500 mt-1">Formatos: PDF, DOCX, PPTX, XLSX, JPG, PNG (≤ 25 MB)</p>
+              </div>
+
+              <!-- Renombrado en el sistema -->
+              <div class="md:col-span-2 bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-2">
+                <p class="text-sm">
+                  Nombre sugerido (base):
+                  <code class="font-mono text-[var(--brand)]" id="nombre-ejemplo">SEMANA_1_NOMBRE_APELLIDO_01</code>
+                </p>
+                <div class="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-2 items-center">
+                  <div>
+                    <label class="block text-xs text-slate-500 mb-1">Nombre final (se guardará como)</label>
+                    <input id="nombre-final" type="text" placeholder="Selecciona un archivo para sugerir la extensión"
+                           class="w-full rounded-lg border border-slate-300 px-3 py-2 font-mono">
+                  </div>
+                  <button id="btn-aplicar-nombre" type="button"
+                          class="text-sm px-3 py-2 rounded-lg border border-slate-300 hover:bg-slate-100">
+                    Aplicar nombre sugerido
+                  </button>
+                </div>
+                <p class="text-xs text-slate-500">Puedes editar el nombre aquí. Si no coincide con el formato requerido, el sistema te propondrá renombrarlo automáticamente antes de enviar.</p>
+              </div>
+
+              <div class="md:col-span-2 flex justify-end gap-3 mt-2">
+                <button type="reset" class="px-5 py-3 rounded-xl border border-slate-300">Limpiar</button>
+                <button type="submit" class="px-5 py-3 rounded-xl bg-[var(--brand)] text-white font-semibold hover:opacity-95 active:opacity-90">
+                  Subir
+                </button>
+              </div>
+            </form>
+
+            <section id="mis-envios" class="hidden mt-8">
+              <h3 class="text-xl font-semibold mb-3">Mis envíos recientes</h3>
+              <div class="overflow-x-auto rounded-xl border border-slate-200">
+                <table class="min-w-full text-sm">
+                  <thead class="bg-slate-100">
+                    <tr>
+                      <th class="text-left px-4 py-2">Fecha</th>
+                      <th class="text-left px-4 py-2">Materia</th>
+                      <th class="text-left px-4 py-2">Parcial</th>
+                      <th class="text-left px-4 py-2">Semana</th>
+                      <th class="text-left px-4 py-2">Tarea</th>
+                      <th class="text-left px-4 py-2">Archivo</th>
+                    </tr>
+                  </thead>
+                  <tbody id="envios-tbody"></tbody>
+                </table>
+              </div>
+            </section>
+          </section>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    /* ============ CONFIG ============ */
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzMWfuwghGGXh652PYLHfFH54HM-8S5T3IS7TyXTOXfrp2v3uZCdYyUTdYWvVXbax6-/exec';
+    const SEMANAS_POR_PARCIAL = 15;
+    const SIZE_LIMIT = 25 * 1024 * 1024;
+    const TIPOS_PERMITIDOS = [
+      'application/pdf','application/vnd.openxmlformats-officedocument.wordprocessingml.document','application/msword',
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation','application/vnd.ms-powerpoint',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet','application/vnd.ms-excel','image/jpeg','image/png'
+    ];
+    const MATERIAS = [
+      'Marco Legal para la Gestión del Riesgo',
+      'Administración',
+      'Sistemas de Información Geográfica Aplicado',
+      'Evaluación de Amenazas',
+      'Evaluación de Vulnerabilidades',
+      'Cambio Climático'
+    ];
+
+    /* ============ HELPERS ============ */
+    const $ = (id)=>document.getElementById(id);
+    const sinAcentos=(s)=>s.normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    const slugUpper=(s)=>sinAcentos(String(s||'').trim()).replace(/[^A-Za-z\s]/g,'').replace(/\s+/g,'_').toUpperCase();
+    const pad2=(n)=>String(n).padStart(2,'0');
+    const getExt=(name)=>{ const m = String(name).match(/\.([^.]+)$/); return m? m[1] : ''; };
+
+    const nombreEsperado=(semana,nombres,apellidos,num)=>{
+      const nom=slugUpper(nombres.split(' ')[0]||'NOMBRE');
+      const ape=slugUpper(apellidos.split(' ')[0]||'APELLIDO');
+      return `SEMANA_${semana}_${nom}_${ape}_${pad2(num)}`
+    };
+
+    const toggleViews=(showLogin)=>{
+      $('view-login').classList.toggle('hidden',!showLogin);
+      $('view-panel').classList.toggle('hidden',showLogin);
+    };
+
+    /* ====== Validador EC (cédula/RUC) ====== */
+    function validarCedulaEC(ced) {
+      if (!/^\d{10}$/.test(ced)) return false;
+      const prov = parseInt(ced.slice(0,2),10);
+      if (prov < 1 || prov > 24) return false;
+      const d = ced.split('').map(n=>parseInt(n,10));
+      const coef = [2,1,2,1,2,1,2,1,2];
+      let suma = 0;
+      for (let i=0;i<9;i++){
+        let prod = d[i]*coef[i];
+        if (prod >= 10) prod -= 9;
+        suma += prod;
+      }
+      const mod = suma % 10;
+      const verificador = (mod === 0) ? 0 : 10 - mod;
+      return verificador === d[9];
+    }
+    function validarIdentificacionEC(ident){
+      if (/^\d{10}$/.test(ident)) return validarCedulaEC(ident);
+      if (/^\d{13}$/.test(ident)) return validarCedulaEC(ident.slice(0,10));
+      return false;
+    }
+
+    /* ============ ESTADO ============ */
+    let alumno=null;
+    let currentExt='';
+
+    // Pinta materias
+    (function fillMaterias(){
+      const sel = $('materia');
+      MATERIAS.forEach(m=>{
+        const op = document.createElement('option');
+        op.value = m; op.textContent = m;
+        sel.appendChild(op);
+      });
+    })();
+
+    const renderSemanas=()=>{
+      const parcial=$('parcial').value;
+      const sel=$('semana');
+      sel.innerHTML='<option value="" disabled selected>Selecciona</option>';
+      if(!parcial) return;
+      for(let i=1;i<=SEMANAS_POR_PARCIAL;i++){
+        const op=document.createElement('option');
+        op.value=String(i); op.textContent=`Semana ${i}`;
+        sel.appendChild(op);
+      }
+    };
+
+    const refreshEjemplo=()=>{
+      const semana=$('semana').value||'1';
+      const num=$('numeroTarea').value||'1';
+      const ejemplo=nombreEsperado(semana, alumno?.nombres||'NOMBRE', alumno?.apellidos||'APELLIDO', num);
+      $('nombre-ejemplo').textContent=ejemplo;
+      // si ya sabemos extensión, actualiza nombre final sugerido
+      if(currentExt){
+        $('nombre-final').placeholder = `${ejemplo}.${currentExt}`;
+      }
+    };
+
+    // Copiar sugerido (base)
+    $('btn-aplicar-nombre')?.addEventListener('click', ()=>{
+      const base = $('nombre-ejemplo').textContent.trim();
+      const ext = currentExt || 'pdf';
+      $('nombre-final').value = `${base}.${ext}`;
+    });
+
+    // Al elegir archivo: detecta extensión y sugiere nombre final
+    $('archivo').addEventListener('change', ()=>{
+      const f = $('archivo').files[0];
+      if(!f){ currentExt=''; return; }
+      currentExt = getExt(f.name) || currentExt || 'pdf';
+      const base = $('nombre-ejemplo').textContent.trim();
+      $('nombre-final').value = `${base}.${currentExt}`;
+      $('nombre-final').placeholder = `${base}.${currentExt}`;
+    });
+
+    /* ============ LOGIN ============ */
+    $('form-login').addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const cedula=$('cedula').value.trim();
+      if(!cedula) return;
+
+      if (!validarIdentificacionEC(cedula)) {
+        return Swal.fire({icon:'warning',title:'Número inválido',text:'Revisa tu cédula (10) o RUC (13).'});
+      }
+
+      Swal.showLoading();
+      try{
+        const res = await fetch(`${SCRIPT_URL}?action=auth&cedula=${encodeURIComponent(cedula)}`);
+        const text = await res.text();
+        let data;
+        try { data = JSON.parse(text); }
+        catch {
+          console.error('Respuesta no JSON:', text);
+          return Swal.fire({
+            icon:'error', title:'No es JSON',
+            html:'El WebApp devolvió HTML (posible login/403). Verifica /exec + permisos.'
+          });
+        }
+
+        if(data.ok){
+          alumno=data.student;
+          $('alumno-nombre').textContent=`${alumno.nombres} ${alumno.apellidos}`;
+          $('alumno-cedula').textContent=alumno.cedula;
+          toggleViews(false); renderSemanas(); refreshEjemplo(); Swal.close();
+          cargarMisEnvios();
+        }else{
+          Swal.fire({icon:'error',title:'No autorizado',text:'La cédula no está registrada.'});
+        }
+      }catch(err){
+        console.error(err);
+        Swal.fire({icon:'error',title:'Error de conexión',text:'Revisa la URL /exec.'});
+      }
+    });
+
+    $('parcial').addEventListener('change', ()=>{renderSemanas(); refreshEjemplo();});
+    $('semana').addEventListener('change', refreshEjemplo);
+    $('numeroTarea').addEventListener('input', refreshEjemplo);
+    $('btn-salir').addEventListener('click', ()=>{ alumno=null; toggleViews(true); $('form-login').reset(); });
+
+    /* ============ SUBIDA ============ */
+    $('form-upload').addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      if(!alumno) return Swal.fire({icon:'error',title:'Sesión',text:'Inicia sesión con tu cédula.'});
+
+      const materia=$('materia').value;
+      const parcial=$('parcial').value;
+      const semana=$('semana').value;
+      const num=$('numeroTarea').value;
+      const file=$('archivo').files[0];
+      let finalName = ($('nombre-final').value || '').trim();
+
+      if(!materia||!parcial||!semana||!num||!file)
+        return Swal.fire({icon:'warning',title:'Campos incompletos',text:'Completa todos los campos.'});
+
+      if(file.size>SIZE_LIMIT)
+        return Swal.fire({icon:'error',title:'Archivo muy grande',text:'Límite 25 MB.'});
+
+      if(!TIPOS_PERMITIDOS.includes(file.type))
+        return Swal.fire({icon:'warning',title:'Formato no permitido',text:'Sube PDF/DOCX/PPTX/XLSX/JPG/PNG.'});
+
+      const esperado = $('nombre-ejemplo').textContent.trim();
+      const ext = getExt(finalName) || getExt(file.name) || currentExt || 'pdf';
+      const baseFinal = finalName.replace(/\.[^.]+$/,'').trim();
+
+      // Si el nombre final no coincide con el requerido, proponemos renombrar automáticamente
+      if(baseFinal !== esperado){
+        const { isConfirmed } = await Swal.fire({
+          icon:'question',
+          title:'Renombrar archivo',
+          html:`El nombre debe ser <code>${esperado}</code>.<br><br>¿Deseas que el sistema lo renombre automáticamente antes de enviar?`,
+          showCancelButton:true, confirmButtonText:'Sí, renombrar', cancelButtonText:'Cancelar'
+        });
+        if(!isConfirmed) return; // usuario canceló
+        finalName = `${esperado}.${ext}`;
+        $('nombre-final').value = finalName;
+      }else{
+        // asegura que tenga extensión
+        if(!/\.[^.]+$/.test(finalName)) finalName = `${baseFinal}.${ext}`;
+      }
+
+      Swal.showLoading();
+      const base64=await new Promise((ok,err)=>{
+        const fr=new FileReader(); fr.onload=()=>ok(String(fr.result).split(',')[1]);
+        fr.onerror=err; fr.readAsDataURL(file);
+      });
+
+      try{
+        const payload={
+          action:'upload',
+          cedula:alumno.cedula,
+          materia:String(materia),
+          parcial:String(parcial),
+          semana:String(semana),
+          numeroTarea:pad2(Number(num)),
+          nombres:alumno.nombres,
+          apellidos:alumno.apellidos,
+          filename:finalName,               // ← nombre final que se guardará en Drive
+          mimeType:file.type,
+          data:base64
+        };
+
+        const res=await fetch(SCRIPT_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+        const text = await res.text();
+        let data;
+        try { data = JSON.parse(text); }
+        catch { console.error('No JSON en upload:', text);
+          return Swal.fire({icon:'error',title:'Subida fallida',text:'El WebApp no devolvió JSON.'}); }
+
+        if(data.ok){
+          Swal.fire({icon:'success',title:'¡Enviado!',html:`Se subió correctamente.<br><a class="text-blue-600 underline" target="_blank" href="${data.fileUrl}">Ver en Drive</a>`});
+          $('form-upload').reset(); currentExt=''; renderSemanas(); refreshEjemplo(); cargarMisEnvios();
+        }else{
+          Swal.fire({icon:'error',title:'Error',text:data.message||'No se pudo subir.'});
+        }
+      }catch(e){
+        console.error(e);
+        Swal.fire({icon:'error',title:'Error de conexión',text:'Intenta nuevamente.'});
+      }
+    });
+
+    /* ============ LISTAR ============ */
+    async function cargarMisEnvios(){
+      if(!alumno) return;
+      try{
+        const res=await fetch(`${SCRIPT_URL}?action=list&cedula=${encodeURIComponent(alumno.cedula)}`);
+        const text = await res.text();
+        let data;
+        try { data = JSON.parse(text); }
+        catch { console.warn('Respuesta no JSON en list:', text); return; }
+
+        const tbody=$('envios-tbody');
+        tbody.innerHTML='';
+        if(data.ok && Array.isArray(data.items)){
+          document.getElementById('mis-envios').classList.remove('hidden');
+          data.items.forEach(r=>{
+            const tr=document.createElement('tr');
+            tr.innerHTML=`
+              <td class="px-4 py-2">${r.fecha}</td>
+              <td class="px-4 py-2">${r.materia||''}</td>
+              <td class="px-4 py-2">${r.parcial}</td>
+              <td class="px-4 py-2">${r.semana}</td>
+              <td class="px-4 py-2">${r.numeroTarea}</td>
+              <td class="px-4 py-2"><a class="text-blue-600 underline" target="_blank" href="${r.fileUrl}">${r.filename}</a></td>`;
+            tbody.appendChild(tr);
+          });
+        }
+      }catch(err){ console.warn('No se pudo cargar envíos',err); }
+    }
+  </script>
+</body>
+</html>
