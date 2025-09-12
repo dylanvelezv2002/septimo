@@ -24,13 +24,12 @@
     }
     .logo-row img{ height:48px; width:auto; object-fit:contain }
     code{ background:#eef2ff; padding:.1rem .3rem; border-radius:.4rem }
-    .tab-btn{ border-bottom:2px solid transparent }
-    .tab-btn.active{ color:var(--brand); border-color:var(--brand); font-weight:600 }
   </style>
 </head>
 <body class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50 text-slate-800">
 
-  <div class="min-h-screen grid grid-cols-1 lg:grid-cols-2">
+  <!-- Sección superior (info izquierda + formulario derecha) -->
+  <div class="min-h-[70vh] grid grid-cols-1 lg:grid-cols-2">
     <!-- Izquierda -->
     <aside class="hidden lg:flex flex-col justify-center bg-gradient-to-b from-white via-indigo-50 to-slate-50 text-slate-800 p-10">
       <div class="max-w-lg mx-auto w-full">
@@ -60,7 +59,7 @@
             <img src="assets/rrd.png" alt="Carrera" />
           </div>
 
-          <!-- LOGIN -->
+        <!-- ========== LOGIN ========== -->
           <section id="view-login" class="space-y-6">
             <header>
               <h2 class="text-2xl md:text-3xl font-semibold">Ingreso por cédula</h2>
@@ -85,7 +84,7 @@
             </form>
           </section>
 
-          <!-- PANEL -->
+        <!-- ========== PANEL (FORMULARIO) ========== -->
           <section id="view-panel" class="hidden space-y-4">
             <div class="flex items-center justify-between gap-4 flex-wrap">
               <div>
@@ -95,133 +94,129 @@
                   Cédula: <span id="alumno-cedula" class="font-mono"></span>
                 </p>
               </div>
-              <button id="btn-salir" class="text-sm text-slate-600 hover:text-red-600">Salir</button>
+              <div class="flex gap-2">
+                <a href="#envios-section" class="text-sm text-[var(--brand)] underline">Ver mis envíos</a>
+                <button id="btn-salir" class="text-sm text-slate-600 hover:text-red-600">Salir</button>
+              </div>
             </div>
 
-            <!-- TABS -->
-            <div class="flex gap-6 border-b border-slate-200">
-              <button id="tabForm"  class="tab-btn active pb-3">Formulario</button>
-              <button id="tabEnvios" class="tab-btn pb-3">Mis envíos</button>
-            </div>
+            <form id="form-upload" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <!-- Materia -->
+              <div class="md:col-span-2">
+                <label class="block text-sm font-medium mb-1">Materia</label>
+                <select id="materia" class="w-full rounded-xl border border-slate-300 px-4 py-3" required>
+                  <option value="" disabled selected>Selecciona</option>
+                </select>
+                <p class="text-xs text-slate-500 mt-1">* Se usará para la carpeta en Drive.</p>
+              </div>
 
-            <!-- TAB: FORM -->
-            <div id="tab-form" class="space-y-4">
-              <form id="form-upload" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <!-- Materia -->
-                <div class="md:col-span-2">
-                  <label class="block text-sm font-medium mb-1">Materia</label>
-                  <select id="materia" class="w-full rounded-xl border border-slate-300 px-4 py-3" required>
-                    <option value="" disabled selected>Selecciona</option>
-                  </select>
-                  <p class="text-xs text-slate-500 mt-1">* Se usará para la carpeta en Drive.</p>
-                </div>
+              <div>
+                <label class="block text-sm font-medium mb-1">Parcial</label>
+                <select id="parcial" class="w-full rounded-xl border border-slate-300 px-4 py-3" required>
+                  <option value="" disabled selected>Selecciona</option>
+                  <option value="1">Parcial 1</option>
+                  <option value="2">Parcial 2</option>
+                </select>
+              </div>
 
-                <div>
-                  <label class="block text-sm font-medium mb-1">Parcial</label>
-                  <select id="parcial" class="w-full rounded-xl border border-slate-300 px-4 py-3" required>
-                    <option value="" disabled selected>Selecciona</option>
-                    <option value="1">Parcial 1</option>
-                    <option value="2">Parcial 2</option>
-                  </select>
-                </div>
+              <div>
+                <label class="block text-sm font-medium mb-1">Semana</label>
+                <select id="semana" class="w-full rounded-xl border border-slate-300 px-4 py-3" required>
+                  <option value="" disabled selected>Selecciona</option>
+                </select>
+              </div>
 
-                <div>
-                  <label class="block text-sm font-medium mb-1">Semana</label>
-                  <select id="semana" class="w-full rounded-xl border border-slate-300 px-4 py-3" required>
-                    <option value="" disabled selected>Selecciona</option>
-                  </select>
-                </div>
+              <div>
+                <label class="block text-sm font-medium mb-1">N.º de tarea</label>
+                <input id="numeroTarea" type="number" min="1" max="99" placeholder="01"
+                       class="w-full rounded-xl border border-slate-300 px-4 py-3" required>
+                <p class="text-xs text-slate-500 mt-1">Usa 01, 02, 03…</p>
+              </div>
 
-                <div>
-                  <label class="block text-sm font-medium mb-1">N.º de tarea</label>
-                  <input id="numeroTarea" type="number" min="1" max="99" placeholder="01"
-                        class="w-full rounded-xl border border-slate-300 px-4 py-3" required>
-                  <p class="text-xs text-slate-500 mt-1">Usa 01, 02, 03…</p>
-                </div>
+              <div>
+                <label class="block text-sm font-medium mb-1">Archivo</label>
+                <input id="archivo" type="file"
+                       class="w-full rounded-xl border border-slate-300 px-4 py-2 bg-white" required>
+                <p class="text-xs text-slate-500 mt-1">Formatos: PDF, DOCX, PPTX, XLSX, JPG, PNG (≤ 25 MB)</p>
+              </div>
 
-                <div>
-                  <label class="block text-sm font-medium mb-1">Archivo</label>
-                  <input id="archivo" type="file"
-                        class="w-full rounded-xl border border-slate-300 px-4 py-2 bg-white" required>
-                  <p class="text-xs text-slate-500 mt-1">Formatos: PDF, DOCX, PPTX, XLSX, JPG, PNG (≤ 25 MB)</p>
-                </div>
-
-                <!-- Renombrado en el sistema -->
-                <div class="md:col-span-2 bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-2">
-                  <p class="text-sm">
-                    Nombre sugerido (base):
-                    <code class="font-mono text-[var(--brand)]" id="nombre-ejemplo">ABBR_SEMANA_1_NOMBRE_APELLIDO_01</code>
-                  </p>
-                  <div class="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-2 items-center">
-                    <div>
-                      <label class="block text-xs text-slate-500 mb-1">Nombre final (se guardará como)</label>
-                      <input id="nombre-final" type="text" placeholder="Selecciona un archivo para sugerir la extensión"
-                            class="w-full rounded-lg border border-slate-300 px-3 py-2 font-mono">
-                    </div>
-                    <button id="btn-aplicar-nombre" type="button"
-                            class="text-sm px-3 py-2 rounded-lg border border-slate-300 hover:bg-slate-100">
-                      Aplicar nombre sugerido
-                    </button>
+              <!-- Renombrado en el sistema -->
+              <div class="md:col-span-2 bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-2">
+                <p class="text-sm">
+                  Nombre sugerido (base):
+                  <code class="font-mono text-[var(--brand)]" id="nombre-ejemplo">ABBR_SEMANA_1_NOMBRE_APELLIDO_01</code>
+                </p>
+                <div class="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-2 items-center">
+                  <div>
+                    <label class="block text-xs text-slate-500 mb-1">Nombre final (se guardará como)</label>
+                    <input id="nombre-final" type="text" placeholder="Selecciona un archivo para sugerir la extensión"
+                           class="w-full rounded-lg border border-slate-300 px-3 py-2 font-mono">
                   </div>
-                  <p class="text-xs text-slate-500">Puedes editar el nombre aquí. Si no coincide con el formato requerido, el sistema te propondrá renombrarlo automáticamente antes de enviar.</p>
-                </div>
-
-                <div class="md:col-span-2 flex justify-end gap-3 mt-2">
-                  <button type="reset" class="px-5 py-3 rounded-xl border border-slate-300">Limpiar</button>
-                  <button type="submit" class="px-5 py-3 rounded-xl bg-[var(--brand)] text-white font-semibold hover:opacity-95 active:opacity-90">
-                    Subir
+                  <button id="btn-aplicar-nombre" type="button"
+                          class="text-sm px-3 py-2 rounded-lg border border-slate-300 hover:bg-slate-100">
+                    Aplicar nombre sugerido
                   </button>
                 </div>
-              </form>
-            </div>
-
-            <!-- TAB: ENVIOS -->
-            <div id="tab-envios" class="hidden">
-              <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-3">
-                <h3 class="text-xl font-semibold">Mis envíos</h3>
-                <div class="flex gap-3 items-center">
-                  <input id="searchEnvios" class="rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="Buscar...">
-                  <label class="text-sm text-slate-600">Por página
-                    <select id="pageSize" class="ml-2 rounded-md border border-slate-300 px-2 py-1 text-sm">
-                      <option>10</option><option>25</option><option>50</option><option>100</option>
-                    </select>
-                  </label>
-                </div>
+                <p class="text-xs text-slate-500">Puedes editar el nombre aquí. Si no coincide con el formato requerido, el sistema te propondrá renombrarlo automáticamente antes de enviar.</p>
               </div>
 
-              <div class="overflow-x-auto rounded-xl border border-slate-200">
-                <table class="min-w-full text-sm">
-                  <thead class="bg-slate-100">
-                    <tr>
-                      <th class="text-left px-4 py-2">Fecha</th>
-                      <th class="text-left px-4 py-2">Materia</th>
-                      <th class="text-left px-4 py-2">Parcial</th>
-                      <th class="text-left px-4 py-2">Semana</th>
-                      <th class="text-left px-4 py-2">Tarea</th>
-                      <th class="text-left px-4 py-2">Archivo</th>
-                    </tr>
-                  </thead>
-                  <tbody id="envios-tbody"></tbody>
-                </table>
+              <div class="md:col-span-2 flex justify-end gap-3 mt-2">
+                <button type="reset" class="px-5 py-3 rounded-xl border border-slate-300">Limpiar</button>
+                <button type="submit" class="px-5 py-3 rounded-xl bg-[var(--brand)] text-white font-semibold hover:opacity-95 active:opacity-90">
+                  Subir
+                </button>
               </div>
-
-              <div class="flex items-center justify-between mt-3 text-sm">
-                <div id="envios-count" class="text-slate-600">0 registros</div>
-                <div class="flex gap-2">
-                  <button id="firstPage" class="px-3 py-1 rounded border border-slate-300">«</button>
-                  <button id="prevPage"  class="px-3 py-1 rounded border border-slate-300">‹</button>
-                  <span id="pageInfo" class="px-2">1 / 1</span>
-                  <button id="nextPage"  class="px-3 py-1 rounded border border-slate-300">›</button>
-                  <button id="lastPage" class="px-3 py-1 rounded border border-slate-300">»</button>
-                </div>
-              </div>
-            </div>
+            </form>
           </section>
 
         </div>
       </div>
     </main>
   </div>
+
+  <!-- ========== SECCIÓN INDEPENDIENTE DE ENVIOS (ABAJO) ========== -->
+  <section id="envios-section" class="px-6 py-10 hidden">
+    <div class="max-w-5xl mx-auto card bg-white rounded-2xl p-6 md:p-8">
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
+        <h3 class="text-2xl font-semibold">Mis envíos</h3>
+        <div class="flex gap-3 items-center">
+          <input id="searchEnvios" class="rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="Buscar...">
+          <label class="text-sm text-slate-600">Por página
+            <select id="pageSize" class="ml-2 rounded-md border border-slate-300 px-2 py-1 text-sm">
+              <option>10</option><option>25</option><option>50</option><option>100</option>
+            </select>
+          </label>
+        </div>
+      </div>
+
+      <div class="overflow-x-auto rounded-xl border border-slate-200">
+        <table class="min-w-full text-sm">
+          <thead class="bg-slate-100">
+            <tr>
+              <th class="text-left px-4 py-2">Fecha</th>
+              <th class="text-left px-4 py-2">Materia</th>
+              <th class="text-left px-4 py-2">Parcial</th>
+              <th class="text-left px-4 py-2">Semana</th>
+              <th class="text-left px-4 py-2">Tarea</th>
+              <th class="text-left px-4 py-2">Archivo</th>
+            </tr>
+          </thead>
+          <tbody id="envios-tbody"></tbody>
+        </table>
+      </div>
+
+      <div class="flex items-center justify-between mt-3 text-sm">
+        <div id="envios-count" class="text-slate-600">0 registros</div>
+        <div class="flex gap-2">
+          <button id="firstPage" class="px-3 py-1 rounded border border-slate-300">«</button>
+          <button id="prevPage"  class="px-3 py-1 rounded border border-slate-300">‹</button>
+          <span id="pageInfo" class="px-2">1 / 1</span>
+          <button id="nextPage"  class="px-3 py-1 rounded border border-slate-300">›</button>
+          <button id="lastPage" class="px-3 py-1 rounded border border-slate-300">»</button>
+        </div>
+      </div>
+    </div>
+  </section>
 
   <script>
     /* ============ CONFIG ============ */
@@ -235,7 +230,7 @@
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet','application/vnd.ms-excel','image/jpeg','image/png'
     ];
 
-    // Materias y abreviaturas (coincidir con backend)
+    // Materias/abreviaturas (debe coincidir con backend)
     const MATERIAS = [
       'Marco Legal para la Gestión del Riesgo',
       'Administración',
@@ -255,7 +250,6 @@
 
     /* ============ SESIÓN PERSISTENTE ============ */
     const SESSION_KEY = 'sesionAlumno';
-    const ACTIVE_TAB_KEY = 'activeTab';
     const SESSION_TTL_MIN = 180; // 3 horas
     const now = ()=>Date.now();
 
@@ -325,35 +319,13 @@
       return false;
     }
 
-    /* ============ ESTADO & TABS ============ */
+    /* ============ ESTADO ENVIOS (buscador + paginación) ============ */
     let alumno=null;
     let currentExt='';
     let enviosData = [];    // items del backend
     let filtered = [];      // luego del buscador
     let pageSize = 10;
     let currentPage = 1;
-
-    function setActiveTab(tab){
-      localStorage.setItem(ACTIVE_TAB_KEY, tab);
-      // botones
-      document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-      if(tab==='form'){ $('tabForm').classList.add('active'); }
-      else { $('tabEnvios').classList.add('active'); }
-
-      // vistas
-      $('tab-form').classList.toggle('hidden', tab!=='form');
-      $('tab-envios').classList.toggle('hidden', tab!=='envios');
-
-      // si entro a envios, refresco
-      if(tab==='envios'){ renderEnviosTable(); }
-    }
-    function restoreActiveTab(){
-      const t = localStorage.getItem(ACTIVE_TAB_KEY) || 'form';
-      setActiveTab(t);
-    }
-
-    $('tabForm').addEventListener('click', ()=>setActiveTab('form'));
-    $('tabEnvios').addEventListener('click', ()=>setActiveTab('envios'));
 
     // Pinta materias
     (function fillMaterias(){
@@ -425,7 +397,7 @@
           $('alumno-nombre').textContent=`${alumno.nombres} ${alumno.apellidos}`;
           $('alumno-cedula').textContent=alumno.cedula;
           toggleViews(false); renderSemanas(); refreshEjemplo(); Swal.close();
-          restoreActiveTab();
+          document.getElementById('envios-section').classList.remove('hidden');
           cargarMisEnvios();
         }else{
           Swal.fire({icon:'error',title:'No autorizado',text:'La cédula no está registrada.'});
@@ -442,7 +414,10 @@
 
     $('btn-salir').addEventListener('click', ()=>{
       alumno=null; clearSession(); toggleViews(true); $('form-login').reset();
-      setActiveTab('form');
+      document.getElementById('envios-section').classList.add('hidden');
+      $('envios-tbody').innerHTML='';
+      $('envios-count').textContent='0 registros';
+      $('pageInfo').textContent='1 / 1';
     });
 
     // Restaurar sesión al cargar
@@ -452,7 +427,9 @@
       alumno = s;
       $('alumno-nombre').textContent=`${alumno.nombres} ${alumno.apellidos}`;
       $('alumno-cedula').textContent=alumno.cedula;
-      toggleViews(false); renderSemanas(); refreshEjemplo(); restoreActiveTab(); cargarMisEnvios();
+      toggleViews(false); renderSemanas(); refreshEjemplo();
+      document.getElementById('envios-section').classList.remove('hidden');
+      cargarMisEnvios();
     })();
 
     /* ============ SUBIDA (JSON base64, sin Content-Type) ============ */
@@ -528,7 +505,8 @@
           Swal.fire({icon:'success',title:'¡Enviado!',html:`Se subió correctamente.<br><a class="text-blue-600 underline" target="_blank" href="${data.fileUrl}">Ver en Drive</a>`});
           $('form-upload').reset(); currentExt=''; renderSemanas(); $('nombre-final').value='';
           cargarMisEnvios(); touchSession();
-          setActiveTab('envios'); // mostrar inmediatamente en la pestaña
+          // Bajar a la sección de envíos
+          document.getElementById('envios-section').scrollIntoView({behavior:'smooth'});
         }else{
           Swal.fire({icon:'error',title:'Error',text:(data&&data.message)||`No se pudo subir. Estado ${res.status}`});
         }
