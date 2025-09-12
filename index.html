@@ -173,9 +173,7 @@
                       <th class="text-left px-4 py-2">Archivo</th>
                     </tr>
                   </thead>
-                  <tbody id="envios-tbody">
-                    <!-- estado vacío -->
-                  </tbody>
+                  <tbody id="envios-tbody"></tbody>
                 </table>
               </div>
             </section>
@@ -468,14 +466,16 @@
       }
     });
 
-    /* ============ LISTAR ============ */
+    /* ============ LISTAR (sin caché y robusto) ============ */
     async function cargarMisEnvios(){
       if(!alumno) return;
       try{
-        const res=await fetch(`${SCRIPT_URL}?action=list&cedula=${encodeURIComponent(alumno.cedula)}`);
+        const url = `${SCRIPT_URL}?action=list&cedula=${encodeURIComponent(alumno.cedula)}&t=${Date.now()}`;
+        const res = await fetch(url, { cache: 'no-store' });
         const text = await res.text();
         let data; try { data = JSON.parse(text); } catch { data=null; }
-        const tbody=$('envios-tbody');
+
+        const tbody=document.getElementById('envios-tbody');
         tbody.innerHTML='';
         document.getElementById('mis-envios').classList.remove('hidden');
 
@@ -483,21 +483,21 @@
           data.items.forEach(r=>{
             const tr=document.createElement('tr');
             tr.innerHTML=`
-              <td class="px-4 py-2">${r.fecha}</td>
+              <td class="px-4 py-2">${r.fecha||''}</td>
               <td class="px-4 py-2">${r.materia||''}</td>
-              <td class="px-4 py-2">${r.parcial}</td>
-              <td class="px-4 py-2">${r.semana}</td>
-              <td class="px-4 py-2">${r.numeroTarea}</td>
-              <td class="px-4 py-2"><a class="text-blue-600 underline" target="_blank" href="${r.fileUrl}">${r.filename}</a></td>`;
+              <td class="px-4 py-2">${r.parcial||''}</td>
+              <td class="px-4 py-2">${r.semana||''}</td>
+              <td class="px-4 py-2">${r.numeroTarea||''}</td>
+              <td class="px-4 py-2">
+                ${r.fileUrl ? `<a class="text-blue-600 underline" target="_blank" href="${r.fileUrl}">${r.filename||'Abrir'}</a>` : (r.filename||'')}
+              </td>`;
             tbody.appendChild(tr);
           });
         }else{
-          const tr=document.createElement('tr');
-          tr.innerHTML = `<td class="px-4 py-4 text-slate-500 italic" colspan="6">Sin envíos registrados aún.</td>`;
-          tbody.appendChild(tr);
+          tbody.innerHTML = `<tr><td class="px-4 py-4 text-slate-500 italic" colspan="6">Sin envíos registrados aún.</td></tr>`;
         }
       }catch(err){
-        const tbody=$('envios-tbody');
+        const tbody=document.getElementById('envios-tbody');
         tbody.innerHTML = `<tr><td class="px-4 py-4 text-red-600" colspan="6">No se pudo cargar la tabla.</td></tr>`;
       }
     }
