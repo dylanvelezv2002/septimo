@@ -23,6 +23,7 @@
       box-shadow:0 0 0 6px rgba(47,51,143,.13);
     }
     .logo-row img{ height:48px; width:auto; object-fit:contain }
+    code{ background:#eef2ff; padding:.1rem .3rem; border-radius:.4rem }
   </style>
 </head>
 <body class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50 text-slate-800">
@@ -246,7 +247,6 @@
     let alumno=null;
     let currentExt='';
 
-    // Pinta materias
     (function fillMaterias(){
       const sel = $('materia');
       MATERIAS.forEach(m=>{
@@ -309,10 +309,7 @@
         try { data = JSON.parse(text); }
         catch {
           console.error('Respuesta no JSON:', text);
-          return Swal.fire({
-            icon:'error', title:'No es JSON',
-            html:'El WebApp devolvió HTML (posible login/403). Verifica /exec + permisos.'
-          });
+          return Swal.fire({icon:'error', title:'No es JSON', html:'Verifica /exec + permisos.'});
         }
 
         if(data.ok){
@@ -335,7 +332,7 @@
     $('numeroTarea').addEventListener('input', refreshEjemplo);
     $('btn-salir').addEventListener('click', ()=>{ alumno=null; toggleViews(true); $('form-login').reset(); });
 
-    /* ============ SUBIDA (FormData / multipart) ============ */
+    /* ============ SUBIDA (JSON base64, sin Content-Type) ============ */
     $('form-upload').addEventListener('submit', async (e)=>{
       e.preventDefault();
       if(!alumno) return Swal.fire({icon:'error',title:'Sesión',text:'Inicia sesión con tu cédula.'});
@@ -375,33 +372,43 @@
         $('nombre-final').value = finalName;
       }
 
-      const fd = new FormData();
-      fd.append('action','upload');
-      fd.append('cedula', alumno.cedula);
-      fd.append('materia', String(materia));
-      fd.append('parcial', String(parcial));
-      fd.append('semana', String(semana));
-      fd.append('numeroTarea', String(num).padStart(2,'0'));
-      fd.append('nombres', alumno.nombres);
-      fd.append('apellidos', alumno.apellidos);
-      fd.append('filename', finalName);
-      fd.append('file', file, finalName);   // se envía con el nombre final
-
       Swal.showLoading();
+      // → a base64 (sin encabezado para evitar preflight)
+      const base64 = await new Promise((ok,err)=>{
+        const fr=new FileReader();
+        fr.onload=()=>ok(String(fr.result).split(',')[1]);
+        fr.onerror=err;
+        fr.readAsDataURL(file);
+      });
+
       try{
-        const res = await fetch(SCRIPT_URL, { method:'POST', body: fd });
+        const payload={
+          action:'upload',
+          cedula:alumno.cedula,
+          materia:String(materia),
+          parcial:String(parcial),
+          semana:String(semana),
+          numeroTarea:String(num).padStart(2,'0'),
+          nombres:alumno.nombres,
+          apellidos:alumno.apellidos,
+          filename:finalName,
+          mimeType:file.type,
+          data:base64
+        };
+
+        const res = await fetch(SCRIPT_URL, { method:'POST', body: JSON.stringify(payload) });
         const text = await res.text();
         let data; try{ data = JSON.parse(text); }catch(e){ data=null; }
 
         if(res.ok && data && data.ok){
           Swal.fire({icon:'success',title:'¡Enviado!',html:`Se subió correctamente.<br><a class="text-blue-600 underline" target="_blank" href="${data.fileUrl}">Ver en Drive</a>`});
-          $('form-upload').reset(); renderSemanas(); $('nombre-final').value=''; cargarMisEnvios();
+          $('form-upload').reset(); currentExt=''; renderSemanas(); $('nombre-final').value=''; cargarMisEnvios();
         }else{
           Swal.fire({icon:'error',title:'Error',text:(data&&data.message)||`No se pudo subir. Estado ${res.status}`});
         }
       }catch(err){
         console.error(err);
-        Swal.fire({icon:'error',title:'Error de conexión',text:'Revisa el despliegue del WebApp y vuelve a intentar.'});
+        Swal.fire({icon:'error',title:'Error de conexión',text:'Intenta nuevamente.'});
       }
     });
 
@@ -436,3 +443,4 @@
   </script>
 </body>
 </html>
+
