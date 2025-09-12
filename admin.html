@@ -1,218 +1,238 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
 <title>Panel Admin · SEPTIMO</title>
 
 <!-- Tailwind -->
 <script src="https://cdn.tailwindcss.com"></script>
 <!-- Inter -->
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<!-- SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <style>
-  :root{--brand:#2F338F}
-  body{font-family:"Inter",system-ui,-apple-system,Segoe UI,Roboto}
-  .card{box-shadow:0 20px 60px rgba(0,0,0,.08)}
-  .kpi{border-left:4px solid var(--brand)}
-  .table th{font-weight:600}
+  :root{ --brand:#2F338F }
+  body{ font-family:"Inter",system-ui,-apple-system,Segoe UI,Roboto }
+  .card{ box-shadow:0 20px 60px rgba(0,0,0,.07) }
+  .kpi{ border-left:4px solid var(--brand) }
+  .table th{ font-weight:600 }
+  .btn{ @apply px-3 py-2 rounded-md text-sm }
+  .btn-outline{ @apply border border-slate-300 }
+  .btn-brand{ background:var(--brand); color:#fff }
+  .grad{ background:linear-gradient(180deg,#ffffff 0%,#f7f8ff 100%) }
 </style>
 </head>
 <body class="bg-slate-50 text-slate-800">
 
-  <header class="bg-white border-b">
+  <header class="bg-white/80 backdrop-blur border-b">
     <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
-      <h1 class="text-xl md:text-2xl font-semibold">Panel Admin</h1>
-      <div class="flex items-center gap-3 text-sm">
-        <span id="who" class="text-slate-500"></span>
-        <button id="btnLogout" class="hidden px-3 py-1 rounded-md border border-slate-300">Salir</button>
+      <div>
+        <h1 class="text-xl md:text-2xl font-semibold">Panel Admin</h1>
+        <p class="text-xs text-slate-500">Control de envíos · UEB</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <span id="who" class="text-sm text-slate-500 hidden">Admin activo</span>
+        <button id="btnLogout" class="btn btn-outline hidden">Salir</button>
       </div>
     </div>
   </header>
 
   <main class="max-w-6xl mx-auto px-4 py-6">
-    <!-- Login admin -->
-    <section id="loginBox" class="card bg-white rounded-2xl p-6 md:p-8">
-      <h2 class="text-lg font-semibold mb-2">Acceso administrador</h2>
-      <p class="text-slate-600 text-sm mb-4">Ingresa la clave de administración (ADMIN_KEY).</p>
-      <div class="flex gap-3 items-center max-w-md">
-        <input id="key" type="password" class="w-full rounded-lg border border-slate-300 px-3 py-2" placeholder="ADMIN_KEY">
-        <button id="btnLogin" class="px-4 py-2 rounded-lg bg-[var(--brand)] text-white">Entrar</button>
+    <!-- KPIs -->
+    <section id="kpis" class="hidden grid md:grid-cols-4 gap-4">
+      <div class="kpi bg-white card rounded-xl p-4">
+        <div class="text-xs text-slate-500">Envíos totales</div>
+        <div id="k_envios" class="text-2xl font-semibold">–</div>
+      </div>
+      <div class="kpi bg-white card rounded-xl p-4">
+        <div class="text-xs text-slate-500">Estudiantes activos</div>
+        <div id="k_activos" class="text-2xl font-semibold">–</div>
+      </div>
+      <div class="kpi bg-white card rounded-xl p-4">
+        <div class="text-xs text-slate-500">Materias con entregas</div>
+        <div id="k_mats" class="text-2xl font-semibold">–</div>
+      </div>
+      <div class="kpi bg-white card rounded-xl p-4">
+        <div class="text-xs text-slate-500">Últimas 24 h</div>
+        <div id="k_24" class="text-2xl font-semibold">–</div>
       </div>
     </section>
 
-    <!-- Dashboard -->
-    <section id="dashBox" class="hidden space-y-6">
-      <!-- KPIs -->
-      <div class="grid md:grid-cols-4 gap-4">
-        <div class="kpi bg-white card rounded-xl p-4">
-          <div class="text-xs text-slate-500">Envíos totales</div>
-          <div id="k_envios" class="text-2xl font-semibold">–</div>
-        </div>
-        <div class="kpi bg-white card rounded-xl p-4">
-          <div class="text-xs text-slate-500">Estudiantes activos</div>
-          <div id="k_activos" class="text-2xl font-semibold">–</div>
-        </div>
-        <div class="kpi bg-white card rounded-xl p-4">
-          <div class="text-xs text-slate-500">Materias con entregas</div>
-          <div id="k_mats" class="text-2xl font-semibold">–</div>
-        </div>
-        <div class="kpi bg-white card rounded-xl p-4">
-          <div class="text-xs text-slate-500">Últimas 24 h</div>
-          <div id="k_24" class="text-2xl font-semibold">–</div>
+    <!-- Filtros -->
+    <section id="filters" class="hidden card bg-white rounded-2xl p-4 md:p-6 mt-6">
+      <div class="grid grid-cols-1 md:grid-cols-5 gap-3">
+        <label class="text-sm">Materia
+          <select id="fMateria" class="mt-1 w-full rounded-md border border-slate-300 px-2 py-2 text-sm">
+            <option value="">Todas</option>
+          </select>
+        </label>
+        <label class="text-sm">Parcial
+          <select id="fParcial" class="mt-1 w-full rounded-md border border-slate-300 px-2 py-2 text-sm">
+            <option value="">Todos</option><option>1</option><option>2</option>
+          </select>
+        </label>
+        <label class="text-sm">Semana
+          <select id="fSemana" class="mt-1 w-full rounded-md border border-slate-300 px-2 py-2 text-sm">
+            <option value="">Todas</option>
+          </select>
+        </label>
+        <label class="text-sm">Buscar
+          <input id="fQ" class="mt-1 w-full rounded-md border border-slate-300 px-2 py-2 text-sm" placeholder="Nombre, cédula, archivo…">
+        </label>
+        <div class="flex items-end gap-2">
+          <button id="btnCsv" class="btn btn-outline">Export CSV</button>
+          <button id="btnDrive" class="btn btn-brand">Abrir carpeta</button>
         </div>
       </div>
+    </section>
 
-      <!-- Filtros -->
-      <div class="card bg-white rounded-2xl p-4 md:p-6">
-        <div class="grid grid-cols-1 md:grid-cols-5 gap-3">
-          <label class="text-sm">Materia
-            <select id="fMateria" class="mt-1 w-full rounded-md border border-slate-300 px-2 py-2 text-sm">
-              <option value="">Todas</option>
-            </select>
-          </label>
-          <label class="text-sm">Parcial
-            <select id="fParcial" class="mt-1 w-full rounded-md border border-slate-300 px-2 py-2 text-sm">
-              <option value="">Todos</option><option>1</option><option>2</option>
-            </select>
-          </label>
-          <label class="text-sm">Semana
-            <select id="fSemana" class="mt-1 w-full rounded-md border border-slate-300 px-2 py-2 text-sm">
-              <option value="">Todas</option>
-            </select>
-          </label>
-          <label class="text-sm">Buscar
-            <input id="fQ" class="mt-1 w-full rounded-md border border-slate-300 px-2 py-2 text-sm" placeholder="Nombre, cédula, archivo…">
-          </label>
-          <div class="flex items-end gap-2">
-            <button id="btnCsv" class="px-3 py-2 rounded-md border border-slate-300 text-sm">Export CSV</button>
-            <button id="btnDrive" class="px-3 py-2 rounded-md bg-[var(--brand)] text-white text-sm">Abrir carpeta</button>
-          </div>
+    <!-- Tabla -->
+    <section id="tableBox" class="hidden card bg-white rounded-2xl p-0 overflow-hidden mt-6">
+      <div class="overflow-x-auto">
+        <table class="min-w-full table">
+          <thead class="bg-slate-100">
+            <tr>
+              <th class="text-left px-4 py-2">Fecha</th>
+              <th class="text-left px-4 py-2">Cédula</th>
+              <th class="text-left px-4 py-2">Estudiante</th>
+              <th class="text-left px-4 py-2">Materia</th>
+              <th class="text-left px-4 py-2">P</th>
+              <th class="text-left px-4 py-2">S</th>
+              <th class="text-left px-4 py-2">Tarea</th>
+              <th class="text-left px-4 py-2">Archivo</th>
+            </tr>
+          </thead>
+          <tbody id="tb"></tbody>
+        </table>
+      </div>
+      <div class="flex items-center justify-between p-3 text-sm">
+        <div id="count" class="text-slate-600">0 registros</div>
+        <div class="flex gap-2">
+          <button id="first" class="btn btn-outline">«</button>
+          <button id="prev"  class="btn btn-outline">‹</button>
+          <span id="pi" class="px-2">1 / 1</span>
+          <button id="next"  class="btn btn-outline">›</button>
+          <button id="last"  class="btn btn-outline">»</button>
         </div>
       </div>
+    </section>
 
-      <!-- Tabla -->
-      <div class="card bg-white rounded-2xl p-0 overflow-hidden">
-        <div class="overflow-x-auto">
-          <table class="min-w-full table">
-            <thead class="bg-slate-100">
-              <tr>
-                <th class="text-left px-4 py-2">Fecha</th>
-                <th class="text-left px-4 py-2">Cédula</th>
-                <th class="text-left px-4 py-2">Estudiante</th>
-                <th class="text-left px-4 py-2">Materia</th>
-                <th class="text-left px-4 py-2">P</th>
-                <th class="text-left px-4 py-2">S</th>
-                <th class="text-left px-4 py-2">Tarea</th>
-                <th class="text-left px-4 py-2">Archivo</th>
-              </tr>
-            </thead>
-            <tbody id="tb"></tbody>
-          </table>
-        </div>
-        <div class="flex items-center justify-between p-3 text-sm">
-          <div id="count" class="text-slate-600">0 registros</div>
-          <div class="flex gap-2">
-            <button id="first" class="px-3 py-1 rounded border border-slate-300">«</button>
-            <button id="prev"  class="px-3 py-1 rounded border border-slate-300">‹</button>
-            <span id="pi" class="px-2">1 / 1</span>
-            <button id="next"  class="px-3 py-1 rounded border border-slate-300">›</button>
-            <button id="last"  class="px-3 py-1 rounded border border-slate-300">»</button>
-          </div>
-        </div>
+    <!-- Faltantes -->
+    <section id="faltBox" class="hidden card bg-white rounded-2xl p-4 md:p-6 mt-6">
+      <div class="flex items-center justify-between mb-2">
+        <h3 class="text-lg font-semibold">Faltantes (según filtros)</h3>
+        <button id="btnFaltantes" class="btn btn-outline">Calcular</button>
       </div>
-
-      <!-- Faltantes -->
-      <div class="card bg-white rounded-2xl p-4 md:p-6">
-        <div class="flex items-center justify-between mb-2">
-          <h3 class="text-lg font-semibold">Faltantes (según filtros)</h3>
-          <button id="btnFaltantes" class="px-3 py-2 rounded-md border border-slate-300 text-sm">Calcular</button>
-        </div>
-        <div id="faltantesBox" class="text-sm text-slate-600">Seleccione Materia (opcional), Parcial y Semana, luego “Calcular”.</div>
-        <ul id="faltantes" class="mt-2 grid md:grid-cols-2 gap-x-8"></ul>
-      </div>
+      <div id="faltantesBox" class="text-sm text-slate-600">Seleccione Materia (opcional), Parcial y Semana, luego “Calcular”.</div>
+      <ul id="faltantes" class="mt-2 grid md:grid-cols-2 gap-x-8"></ul>
     </section>
   </main>
 
 <script>
 /* ===== CONFIG ===== */
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzMWfuwghGGXh652PYLHfFH54HM-8S5T3IS7TyXTOXfrp2v3uZCdYyUTdYWvVXbax6-/exec';
-const ADMIN_KEY = ''; // deja vacío para escribirla en el login
+const ADMIN_KEY = '';            // déjalo vacío: se pedirá con SweetAlert
 const SEMANAS = 15;
 
 /* ===== STATE ===== */
 let key = localStorage.getItem('ADMIN_KEY') || ADMIN_KEY || '';
-let all = [];      // todos los envíos
-let view = [];     // filtrados
-let page = 1, size = 25;
+let all = [], view = []; let page = 1, size = 25;
 
 /* ===== Helpers ===== */
 const $ = id => document.getElementById(id);
-function fmtName(n, a){ return `${n||''} ${a||''}`.trim(); }
-function toCsv(rows){
+const fmtName = (n,a)=>`${n||''} ${a||''}`.trim();
+const toCsv = rows=>{
   const esc = v => `"${String(v??'').replace(/"/g,'""')}"`;
   const hdr = ['fecha','cedula','nombres','apellidos','materia','parcial','semana','numeroTarea','filename','fileUrl'];
-  const lines = [hdr.join(',')].concat(rows.map(r=>hdr.map(k=>esc(r[k])).join(',')));
-  return lines.join('\n');
+  return [hdr.join(',')].concat(rows.map(r=>hdr.map(k=>esc(r[k])).join(','))).join('\n');
+};
+
+function showSections(show){
+  // show = true cuando hay sesión
+  ['kpis','filters','tableBox','faltBox'].forEach(id=>{
+    $(id).classList.toggle('hidden', !show);
+  });
+  $('who').classList.toggle('hidden', !show);
+  $('btnLogout').classList.toggle('hidden', !show);
 }
-function showLogin(){ $('loginBox').classList.remove('hidden'); $('dashBox').classList.add('hidden'); $('btnLogout').classList.add('hidden'); }
-function showDash(){ $('loginBox').classList.add('hidden'); $('dashBox').classList.remove('hidden'); $('btnLogout').classList.remove('hidden'); }
+
+async function promptKey(initial=''){
+  const { value: k } = await Swal.fire({
+    title: 'Acceso administrador',
+    input: 'password',
+    inputValue: initial || '',
+    inputLabel: 'Ingresa tu ADMIN_KEY',
+    inputPlaceholder: 'ADMIN_KEY',
+    confirmButtonText: 'Entrar',
+    showCancelButton: false,
+    backdrop: true,
+    allowOutsideClick: false,
+  });
+  return (k||'').trim();
+}
+
+function swalError(title, html){
+  return Swal.fire({ icon:'error', title, html, confirmButtonText:'Ok' });
+}
+function swalToast(msg, icon='success'){
+  return Swal.fire({ toast:true, position:'top-end', timer:2200, showConfirmButton:false, icon, title:msg });
+}
 
 /* ===== Auth ===== */
-$('btnLogin').onclick = async ()=>{
-  const k = $('key').value.trim();
-  if(!k) return;
-  key = k; localStorage.setItem('ADMIN_KEY', key);
-  await boot();
-};
-$('btnLogout').onclick = ()=>{
-  localStorage.removeItem('ADMIN_KEY'); key='';
-  showLogin(); $('who').textContent='';
+$('btnLogout').onclick = async ()=>{
+  const ok = await Swal.fire({title:'Cerrar sesión', text:'¿Deseas salir del panel?', icon:'question', showCancelButton:true, confirmButtonText:'Salir'}).then(r=>r.isConfirmed);
+  if(!ok) return;
+  localStorage.removeItem('ADMIN_KEY'); key=''; showSections(false);
+  await loginFlow();
 };
 
-/* ===== Inicio ===== */
-async function boot(){
-  if(!key){ showLogin(); return; }
-  $('who').textContent = 'Admin activo';
+async function loginFlow(){
+  if(!key) key = await promptKey();
+  if(!key){ await swalError('Clave requerida','Debes ingresar la ADMIN_KEY.'); return loginFlow(); }
+  localStorage.setItem('ADMIN_KEY', key);
+
+  Swal.showLoading();
   try{
     // KPIs
-    const s = await fetch(`${SCRIPT_URL}?action=adminStats&key=${encodeURIComponent(key)}`).then(r=>r.json());
-    if(!s.ok) throw new Error(s.message||'stats');
+    const statsUrl = `${SCRIPT_URL}?action=adminStats&key=${encodeURIComponent(key)}`;
+    const s = await fetch(statsUrl).then(async r=>{
+      const t = await r.text(); try{ return JSON.parse(t) }catch{ throw new Error('Respuesta no JSON:<br><small>'+t.slice(0,200)+'</small>') }
+    });
+    if(!s.ok) throw new Error(s.message||'Clave inválida');
     $('k_envios').textContent = s.totals.envios;
     $('k_activos').textContent = s.totals.activos;
     $('k_mats').textContent   = s.totals.materias;
     $('k_24').textContent     = s.totals.last24;
 
     // Envíos
-    const res = await fetch(`${SCRIPT_URL}?action=adminList&key=${encodeURIComponent(key)}`).then(r=>r.json());
-    if(!res.ok) throw new Error(res.message||'list');
+    const listUrl = `${SCRIPT_URL}?action=adminList&key=${encodeURIComponent(key)}`;
+    const res = await fetch(listUrl).then(async r=>{
+      const t = await r.text(); try{ return JSON.parse(t) }catch{ throw new Error('Respuesta no JSON:<br><small>'+t.slice(0,200)+'</small>') }
+    });
+    if(!res.ok) throw new Error(res.message||'No se pudo listar');
     all = res.items || [];
 
-    // Materias en filtros
+    // Llenar filtros
     const mats = Array.from(new Set(all.map(x=>x.materia).filter(Boolean))).sort();
-    const mSel = $('fMateria'); mSel.innerHTML = '<option value="">Todas</option>';
-    mats.forEach(m=>{
-      const op=document.createElement('option'); op.value=m; op.textContent=m; mSel.appendChild(op);
-    });
-    // Semanas
-    const sSel = $('fSemana'); sSel.innerHTML = '<option value="">Todas</option>';
-    for(let i=1;i<=SEMANAS;i++){ const op=document.createElement('option'); op.value=String(i); op.textContent=i; sSel.appendChild(op); }
+    $('fMateria').innerHTML = '<option value="">Todas</option>' + mats.map(m=>`<option>${m}</option>`).join('');
+    $('fSemana').innerHTML = '<option value="">Todas</option>' + Array.from({length:SEMANAS},(_,i)=>`<option>${i+1}</option>`).join('');
 
-    apply();
-    showDash();
-  }catch(e){
-    console.error(e);
-    alert('Clave inválida o error de conexión.');
-    showLogin();
+    apply(); showSections(true); $('who').textContent = 'Admin activo';
+    Swal.close(); swalToast('Sesión iniciada');
+  }catch(err){
+    Swal.close();
+    await swalError('Clave inválida o error de conexión.', String(err.message||err));
+    key=''; localStorage.removeItem('ADMIN_KEY');
+    return loginFlow();
   }
 }
 
 /* ===== Filtros + tabla ===== */
 function apply(){
-  const mat = $('fMateria').value.trim();
-  const par = $('fParcial').value.trim();
-  const sem = $('fSemana').value.trim();
-  const q   = $('fQ').value.trim().toLowerCase();
+  const mat=$('fMateria').value.trim(), par=$('fParcial').value.trim(), sem=$('fSemana').value.trim();
+  const q=($('fQ').value||'').toLowerCase().trim();
 
   view = all.filter(r=>{
     const okM = !mat || r.materia===mat;
@@ -220,28 +240,24 @@ function apply(){
     const okS = !sem || String(r.semana)===sem;
     if(!(okM&&okP&&okS)) return false;
     if(!q) return true;
-    const hay = [r.cedula, r.nombres, r.apellidos, r.materia, r.filename].map(x=>String(x||'').toLowerCase());
-    return hay.some(v=>v.includes(q));
+    return [r.cedula,r.nombres,r.apellidos,r.materia,r.filename].some(v=>String(v||'').toLowerCase().includes(q));
   });
-
-  page = 1;
-  renderTable();
+  page=1; renderTable();
 }
+['fMateria','fParcial','fSemana','fQ'].forEach(id=>$(id).addEventListener('input', apply));
 
 function renderTable(){
-  const tb = $('tb'); tb.innerHTML='';
-  size = 25;
+  const tb=$('tb'); tb.innerHTML=''; size=25;
   const totalPages = Math.max(1, Math.ceil(view.length/size));
   page = Math.min(page, totalPages);
-  const start = (page-1)*size;
-  const rows = view.slice(start, start+size);
+  const start=(page-1)*size, rows=view.slice(start,start+size);
 
   if(rows.length===0){
     tb.innerHTML = `<tr><td colspan="8" class="px-4 py-6 text-slate-500 italic">Sin registros</td></tr>`;
   }else{
     rows.forEach(r=>{
       const tr=document.createElement('tr');
-      tr.innerHTML = `
+      tr.innerHTML=`
         <td class="px-4 py-2">${r.fecha||''}</td>
         <td class="px-4 py-2">${r.cedula||''}</td>
         <td class="px-4 py-2">${fmtName(r.nombres,r.apellidos)}</td>
@@ -258,56 +274,59 @@ function renderTable(){
   $('first').disabled = $('prev').disabled = page<=1;
   $('next').disabled  = $('last').disabled = page>=totalPages;
 }
-
-/* Paginación */
 $('first').onclick=()=>{page=1;renderTable();};
 $('prev').onclick =()=>{if(page>1) page--;renderTable();};
 $('next').onclick =()=>{page++;renderTable();};
 $('last').onclick =()=>{page=Math.ceil(view.length/size)||1;renderTable();};
 
-/* Eventos filtros */
-['fMateria','fParcial','fSemana','fQ'].forEach(id=>$(id).addEventListener('input', apply));
-
-/* Export */
+/* Export CSV */
 $('btnCsv').onclick = ()=>{
+  if(view.length===0) return swalToast('No hay datos','info');
   const csv = toCsv(view);
-  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const blob = new Blob([csv],{type:'text/csv;charset=utf-8;'});
   const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href=url; a.download='envios.csv'; a.click();
-  URL.revokeObjectURL(url);
+  const a=document.createElement('a'); a.href=url; a.download='envios.csv'; a.click(); URL.revokeObjectURL(url);
+  swalToast('CSV generado');
 };
 
 /* Abrir carpeta en Drive */
 $('btnDrive').onclick = async ()=>{
   const mat=$('fMateria').value.trim(), par=$('fParcial').value.trim(), sem=$('fSemana').value.trim();
-  if(!(mat&&par&&sem)){ alert('Seleccione Materia, Parcial y Semana.'); return; }
-  const u = `${SCRIPT_URL}?action=adminFolderId&key=${encodeURIComponent(key)}&materia=${encodeURIComponent(mat)}&parcial=${encodeURIComponent(par)}&semana=${encodeURIComponent(sem)}`;
-  const res = await fetch(u).then(r=>r.json());
-  if(res.ok && res.url) window.open(res.url,'_blank'); else alert('No se pudo abrir la carpeta.');
+  if(!(mat&&par&&sem)) return swalError('Faltan filtros','Elige Materia, Parcial y Semana.');
+  try{
+    const u = `${SCRIPT_URL}?action=adminFolderId&key=${encodeURIComponent(key)}&materia=${encodeURIComponent(mat)}&parcial=${encodeURIComponent(par)}&semana=${encodeURIComponent(sem)}`;
+    const res = await fetch(u).then(r=>r.json());
+    if(res.ok && res.url){ window.open(res.url,'_blank'); } else { throw new Error(res.message||'No se pudo abrir'); }
+  }catch(e){ swalError('Error', String(e.message||e)); }
 };
 
 /* Faltantes */
 $('btnFaltantes').onclick = async ()=>{
   const mat=$('fMateria').value.trim(), par=$('fParcial').value.trim(), sem=$('fSemana').value.trim();
-  if(!(par&&sem)){ alert('Seleccione Parcial y Semana (Materia opcional).'); return; }
-  const u = `${SCRIPT_URL}?action=adminMissing&key=${encodeURIComponent(key)}&parcial=${encodeURIComponent(par)}&semana=${encodeURIComponent(sem)}${mat?`&materia=${encodeURIComponent(mat)}`:''}`;
-  const res = await fetch(u).then(r=>r.json());
-  const ul = $('faltantes'); ul.innerHTML='';
-  if(res.ok){
-    $('faltantesBox').textContent = `Faltantes: ${res.faltantes.length} / ${res.total}`;
-    res.faltantes.forEach(s=>{
-      const li=document.createElement('li');
-      li.className='py-1'; li.textContent=`${s.cedula} — ${fmtName(s.nombres,s.apellidos)}`;
-      ul.appendChild(li);
-    });
-  }else{
-    $('faltantesBox').textContent = res.message || 'Error';
-  }
+  if(!(par&&sem)) return swalError('Faltan filtros','Selecciona Parcial y Semana (Materia opcional).');
+  const q = `${SCRIPT_URL}?action=adminMissing&key=${encodeURIComponent(key)}&parcial=${par}&semana=${sem}${mat?`&materia=${encodeURIComponent(mat)}`:''}`;
+  try{
+    const res = await fetch(q).then(r=>r.json());
+    const ul=$('faltantes'); ul.innerHTML='';
+    if(res.ok){
+      $('faltantesBox').textContent = `Faltantes: ${res.faltantes.length} / ${res.total}`;
+      res.faltantes.forEach(s=>{
+        const li=document.createElement('li'); li.className='py-1';
+        li.textContent=`${s.cedula} — ${fmtName(s.nombres,s.apellidos)}`;
+        ul.appendChild(li);
+      });
+    }else{
+      $('faltantesBox').textContent = res.message || 'Error';
+    }
+  }catch(e){ swalError('Error', String(e.message||e)); }
 };
 
 /* Start */
-boot();
+(async ()=>{
+  showSections(false);
+  $('who').textContent = '';
+  await loginFlow();
+})();
 </script>
 </body>
 </html>
