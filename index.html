@@ -24,11 +24,14 @@
     }
     .logo-row img{ height:48px; width:auto; object-fit:contain }
     code{ background:#eef2ff; padding:.1rem .3rem; border-radius:.4rem }
+    .tab-btn{ border-bottom:2px solid transparent }
+    .tab-btn.active{ color:var(--brand); border-color:var(--brand); font-weight:600 }
   </style>
 </head>
 <body class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50 text-slate-800">
 
   <div class="min-h-screen grid grid-cols-1 lg:grid-cols-2">
+    <!-- Izquierda -->
     <aside class="hidden lg:flex flex-col justify-center bg-gradient-to-b from-white via-indigo-50 to-slate-50 text-slate-800 p-10">
       <div class="max-w-lg mx-auto w-full">
         <div class="flex items-center gap-4 mb-8 logo-row">
@@ -47,6 +50,7 @@
       </div>
     </aside>
 
+    <!-- Derecha -->
     <main class="flex items-center justify-center p-6">
       <div class="w-full max-w-2xl">
         <div class="card bg-white rounded-2xl p-6 md:p-8">
@@ -60,7 +64,7 @@
           <section id="view-login" class="space-y-6">
             <header>
               <h2 class="text-2xl md:text-3xl font-semibold">Ingreso por cédula</h2>
-              <p class="text-slate-600 mt-1">Ingresa tu número de cédula para acceder al panel de subida.</p>
+              <p class="text-slate-600 mt-1">Ingresa tu número de cédula para acceder al panel.</p>
             </header>
 
             <form id="form-login" class="space-y-3">
@@ -82,85 +86,109 @@
           </section>
 
           <!-- PANEL -->
-          <section id="view-panel" class="hidden">
+          <section id="view-panel" class="hidden space-y-4">
             <div class="flex items-center justify-between gap-4 flex-wrap">
               <div>
-                <h2 class="text-2xl md:text-3xl font-semibold">Subir tarea</h2>
-                <p class="text-slate-600">Bienvenido, <span id="alumno-nombre" class="font-semibold"></span>. Cédula: <span id="alumno-cedula" class="font-mono"></span></p>
+                <h2 class="text-2xl md:text-3xl font-semibold">Bienvenido</h2>
+                <p class="text-slate-600">
+                  <span id="alumno-nombre" class="font-semibold"></span> &middot;
+                  Cédula: <span id="alumno-cedula" class="font-mono"></span>
+                </p>
               </div>
               <button id="btn-salir" class="text-sm text-slate-600 hover:text-red-600">Salir</button>
             </div>
 
-            <form id="form-upload" class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-              <!-- Materia -->
-              <div class="md:col-span-2">
-                <label class="block text-sm font-medium mb-1">Materia</label>
-                <select id="materia" class="w-full rounded-xl border border-slate-300 px-4 py-3" required>
-                  <option value="" disabled selected>Selecciona</option>
-                </select>
-                <p class="text-xs text-slate-500 mt-1">* Se usará para la carpeta en Drive.</p>
-              </div>
+            <!-- TABS -->
+            <div class="flex gap-6 border-b border-slate-200">
+              <button id="tabForm"  class="tab-btn active pb-3">Formulario</button>
+              <button id="tabEnvios" class="tab-btn pb-3">Mis envíos</button>
+            </div>
 
-              <div>
-                <label class="block text-sm font-medium mb-1">Parcial</label>
-                <select id="parcial" class="w-full rounded-xl border border-slate-300 px-4 py-3" required>
-                  <option value="" disabled selected>Selecciona</option>
-                  <option value="1">Parcial 1</option>
-                  <option value="2">Parcial 2</option>
-                </select>
-              </div>
+            <!-- TAB: FORM -->
+            <div id="tab-form" class="space-y-4">
+              <form id="form-upload" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Materia -->
+                <div class="md:col-span-2">
+                  <label class="block text-sm font-medium mb-1">Materia</label>
+                  <select id="materia" class="w-full rounded-xl border border-slate-300 px-4 py-3" required>
+                    <option value="" disabled selected>Selecciona</option>
+                  </select>
+                  <p class="text-xs text-slate-500 mt-1">* Se usará para la carpeta en Drive.</p>
+                </div>
 
-              <div>
-                <label class="block text-sm font-medium mb-1">Semana</label>
-                <select id="semana" class="w-full rounded-xl border border-slate-300 px-4 py-3" required>
-                  <option value="" disabled selected>Selecciona</option>
-                </select>
-              </div>
+                <div>
+                  <label class="block text-sm font-medium mb-1">Parcial</label>
+                  <select id="parcial" class="w-full rounded-xl border border-slate-300 px-4 py-3" required>
+                    <option value="" disabled selected>Selecciona</option>
+                    <option value="1">Parcial 1</option>
+                    <option value="2">Parcial 2</option>
+                  </select>
+                </div>
 
-              <div>
-                <label class="block text-sm font-medium mb-1">N.º de tarea</label>
-                <input id="numeroTarea" type="number" min="1" max="99" placeholder="01"
-                       class="w-full rounded-xl border border-slate-300 px-4 py-3" required>
-                <p class="text-xs text-slate-500 mt-1">Usa 01, 02, 03…</p>
-              </div>
+                <div>
+                  <label class="block text-sm font-medium mb-1">Semana</label>
+                  <select id="semana" class="w-full rounded-xl border border-slate-300 px-4 py-3" required>
+                    <option value="" disabled selected>Selecciona</option>
+                  </select>
+                </div>
 
-              <div>
-                <label class="block text-sm font-medium mb-1">Archivo</label>
-                <input id="archivo" type="file"
-                       class="w-full rounded-xl border border-slate-300 px-4 py-2 bg-white" required>
-                <p class="text-xs text-slate-500 mt-1">Formatos: PDF, DOCX, PPTX, XLSX, JPG, PNG (≤ 25 MB)</p>
-              </div>
+                <div>
+                  <label class="block text-sm font-medium mb-1">N.º de tarea</label>
+                  <input id="numeroTarea" type="number" min="1" max="99" placeholder="01"
+                        class="w-full rounded-xl border border-slate-300 px-4 py-3" required>
+                  <p class="text-xs text-slate-500 mt-1">Usa 01, 02, 03…</p>
+                </div>
 
-              <!-- Renombrado en el sistema -->
-              <div class="md:col-span-2 bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-2">
-                <p class="text-sm">
-                  Nombre sugerido (base):
-                  <code class="font-mono text-[var(--brand)]" id="nombre-ejemplo">ABBR_SEMANA_1_NOMBRE_APELLIDO_01</code>
-                </p>
-                <div class="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-2 items-center">
-                  <div>
-                    <label class="block text-xs text-slate-500 mb-1">Nombre final (se guardará como)</label>
-                    <input id="nombre-final" type="text" placeholder="Selecciona un archivo para sugerir la extensión"
-                           class="w-full rounded-lg border border-slate-300 px-3 py-2 font-mono">
+                <div>
+                  <label class="block text-sm font-medium mb-1">Archivo</label>
+                  <input id="archivo" type="file"
+                        class="w-full rounded-xl border border-slate-300 px-4 py-2 bg-white" required>
+                  <p class="text-xs text-slate-500 mt-1">Formatos: PDF, DOCX, PPTX, XLSX, JPG, PNG (≤ 25 MB)</p>
+                </div>
+
+                <!-- Renombrado en el sistema -->
+                <div class="md:col-span-2 bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-2">
+                  <p class="text-sm">
+                    Nombre sugerido (base):
+                    <code class="font-mono text-[var(--brand)]" id="nombre-ejemplo">ABBR_SEMANA_1_NOMBRE_APELLIDO_01</code>
+                  </p>
+                  <div class="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-2 items-center">
+                    <div>
+                      <label class="block text-xs text-slate-500 mb-1">Nombre final (se guardará como)</label>
+                      <input id="nombre-final" type="text" placeholder="Selecciona un archivo para sugerir la extensión"
+                            class="w-full rounded-lg border border-slate-300 px-3 py-2 font-mono">
+                    </div>
+                    <button id="btn-aplicar-nombre" type="button"
+                            class="text-sm px-3 py-2 rounded-lg border border-slate-300 hover:bg-slate-100">
+                      Aplicar nombre sugerido
+                    </button>
                   </div>
-                  <button id="btn-aplicar-nombre" type="button"
-                          class="text-sm px-3 py-2 rounded-lg border border-slate-300 hover:bg-slate-100">
-                    Aplicar nombre sugerido
+                  <p class="text-xs text-slate-500">Puedes editar el nombre aquí. Si no coincide con el formato requerido, el sistema te propondrá renombrarlo automáticamente antes de enviar.</p>
+                </div>
+
+                <div class="md:col-span-2 flex justify-end gap-3 mt-2">
+                  <button type="reset" class="px-5 py-3 rounded-xl border border-slate-300">Limpiar</button>
+                  <button type="submit" class="px-5 py-3 rounded-xl bg-[var(--brand)] text-white font-semibold hover:opacity-95 active:opacity-90">
+                    Subir
                   </button>
                 </div>
-                <p class="text-xs text-slate-500">Puedes editar el nombre aquí. Si no coincide con el formato requerido, el sistema te propondrá renombrarlo automáticamente antes de enviar.</p>
+              </form>
+            </div>
+
+            <!-- TAB: ENVIOS -->
+            <div id="tab-envios" class="hidden">
+              <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-3">
+                <h3 class="text-xl font-semibold">Mis envíos</h3>
+                <div class="flex gap-3 items-center">
+                  <input id="searchEnvios" class="rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="Buscar...">
+                  <label class="text-sm text-slate-600">Por página
+                    <select id="pageSize" class="ml-2 rounded-md border border-slate-300 px-2 py-1 text-sm">
+                      <option>10</option><option>25</option><option>50</option><option>100</option>
+                    </select>
+                  </label>
+                </div>
               </div>
 
-              <div class="md:col-span-2 flex justify-end gap-3 mt-2">
-                <button type="reset" class="px-5 py-3 rounded-xl border border-slate-300">Limpiar</button>
-                <button type="submit" class="px-5 py-3 rounded-xl bg-[var(--brand)] text-white font-semibold hover:opacity-95 active:opacity-90">
-                  Subir
-                </button>
-              </div>
-            </form>
-
-            <section id="mis-envios" class="hidden mt-8">
-              <h3 class="text-xl font-semibold mb-3">Mis envíos recientes</h3>
               <div class="overflow-x-auto rounded-xl border border-slate-200">
                 <table class="min-w-full text-sm">
                   <thead class="bg-slate-100">
@@ -176,8 +204,20 @@
                   <tbody id="envios-tbody"></tbody>
                 </table>
               </div>
-            </section>
+
+              <div class="flex items-center justify-between mt-3 text-sm">
+                <div id="envios-count" class="text-slate-600">0 registros</div>
+                <div class="flex gap-2">
+                  <button id="firstPage" class="px-3 py-1 rounded border border-slate-300">«</button>
+                  <button id="prevPage"  class="px-3 py-1 rounded border border-slate-300">‹</button>
+                  <span id="pageInfo" class="px-2">1 / 1</span>
+                  <button id="nextPage"  class="px-3 py-1 rounded border border-slate-300">›</button>
+                  <button id="lastPage" class="px-3 py-1 rounded border border-slate-300">»</button>
+                </div>
+              </div>
+            </div>
           </section>
+
         </div>
       </div>
     </main>
@@ -195,7 +235,7 @@
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet','application/vnd.ms-excel','image/jpeg','image/png'
     ];
 
-    // Materias y abreviaturas (debe coincidir con backend)
+    // Materias y abreviaturas (coincidir con backend)
     const MATERIAS = [
       'Marco Legal para la Gestión del Riesgo',
       'Administración',
@@ -215,6 +255,7 @@
 
     /* ============ SESIÓN PERSISTENTE ============ */
     const SESSION_KEY = 'sesionAlumno';
+    const ACTIVE_TAB_KEY = 'activeTab';
     const SESSION_TTL_MIN = 180; // 3 horas
     const now = ()=>Date.now();
 
@@ -284,9 +325,35 @@
       return false;
     }
 
-    /* ============ ESTADO ============ */
+    /* ============ ESTADO & TABS ============ */
     let alumno=null;
     let currentExt='';
+    let enviosData = [];    // items del backend
+    let filtered = [];      // luego del buscador
+    let pageSize = 10;
+    let currentPage = 1;
+
+    function setActiveTab(tab){
+      localStorage.setItem(ACTIVE_TAB_KEY, tab);
+      // botones
+      document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+      if(tab==='form'){ $('tabForm').classList.add('active'); }
+      else { $('tabEnvios').classList.add('active'); }
+
+      // vistas
+      $('tab-form').classList.toggle('hidden', tab!=='form');
+      $('tab-envios').classList.toggle('hidden', tab!=='envios');
+
+      // si entro a envios, refresco
+      if(tab==='envios'){ renderEnviosTable(); }
+    }
+    function restoreActiveTab(){
+      const t = localStorage.getItem(ACTIVE_TAB_KEY) || 'form';
+      setActiveTab(t);
+    }
+
+    $('tabForm').addEventListener('click', ()=>setActiveTab('form'));
+    $('tabEnvios').addEventListener('click', ()=>setActiveTab('envios'));
 
     // Pinta materias
     (function fillMaterias(){
@@ -358,6 +425,7 @@
           $('alumno-nombre').textContent=`${alumno.nombres} ${alumno.apellidos}`;
           $('alumno-cedula').textContent=alumno.cedula;
           toggleViews(false); renderSemanas(); refreshEjemplo(); Swal.close();
+          restoreActiveTab();
           cargarMisEnvios();
         }else{
           Swal.fire({icon:'error',title:'No autorizado',text:'La cédula no está registrada.'});
@@ -374,6 +442,7 @@
 
     $('btn-salir').addEventListener('click', ()=>{
       alumno=null; clearSession(); toggleViews(true); $('form-login').reset();
+      setActiveTab('form');
     });
 
     // Restaurar sesión al cargar
@@ -383,7 +452,7 @@
       alumno = s;
       $('alumno-nombre').textContent=`${alumno.nombres} ${alumno.apellidos}`;
       $('alumno-cedula').textContent=alumno.cedula;
-      toggleViews(false); renderSemanas(); refreshEjemplo(); cargarMisEnvios();
+      toggleViews(false); renderSemanas(); refreshEjemplo(); restoreActiveTab(); cargarMisEnvios();
     })();
 
     /* ============ SUBIDA (JSON base64, sin Content-Type) ============ */
@@ -457,7 +526,9 @@
 
         if(res.ok && data && data.ok){
           Swal.fire({icon:'success',title:'¡Enviado!',html:`Se subió correctamente.<br><a class="text-blue-600 underline" target="_blank" href="${data.fileUrl}">Ver en Drive</a>`});
-          $('form-upload').reset(); currentExt=''; renderSemanas(); $('nombre-final').value=''; cargarMisEnvios(); touchSession();
+          $('form-upload').reset(); currentExt=''; renderSemanas(); $('nombre-final').value='';
+          cargarMisEnvios(); touchSession();
+          setActiveTab('envios'); // mostrar inmediatamente en la pestaña
         }else{
           Swal.fire({icon:'error',title:'Error',text:(data&&data.message)||`No se pudo subir. Estado ${res.status}`});
         }
@@ -466,7 +537,7 @@
       }
     });
 
-    /* ============ LISTAR (sin caché y robusto) ============ */
+    /* ============ LISTAR (sin caché) + BUSCADOR + PAGINACIÓN ============ */
     async function cargarMisEnvios(){
       if(!alumno) return;
       try{
@@ -475,32 +546,78 @@
         const text = await res.text();
         let data; try { data = JSON.parse(text); } catch { data=null; }
 
-        const tbody=document.getElementById('envios-tbody');
-        tbody.innerHTML='';
-        document.getElementById('mis-envios').classList.remove('hidden');
-
-        if(data && data.ok && Array.isArray(data.items) && data.items.length){
-          data.items.forEach(r=>{
-            const tr=document.createElement('tr');
-            tr.innerHTML=`
-              <td class="px-4 py-2">${r.fecha||''}</td>
-              <td class="px-4 py-2">${r.materia||''}</td>
-              <td class="px-4 py-2">${r.parcial||''}</td>
-              <td class="px-4 py-2">${r.semana||''}</td>
-              <td class="px-4 py-2">${r.numeroTarea||''}</td>
-              <td class="px-4 py-2">
-                ${r.fileUrl ? `<a class="text-blue-600 underline" target="_blank" href="${r.fileUrl}">${r.filename||'Abrir'}</a>` : (r.filename||'')}
-              </td>`;
-            tbody.appendChild(tr);
-          });
-        }else{
-          tbody.innerHTML = `<tr><td class="px-4 py-4 text-slate-500 italic" colspan="6">Sin envíos registrados aún.</td></tr>`;
-        }
+        enviosData = (data && data.ok && Array.isArray(data.items)) ? data.items : [];
+        applyFilterAndRender();
       }catch(err){
-        const tbody=document.getElementById('envios-tbody');
-        tbody.innerHTML = `<tr><td class="px-4 py-4 text-red-600" colspan="6">No se pudo cargar la tabla.</td></tr>`;
+        enviosData = [];
+        applyFilterAndRender();
       }
     }
+
+    function applyFilterAndRender(){
+      const q = ($('searchEnvios').value||'').toLowerCase().trim();
+      if(!q){
+        filtered = enviosData.slice();
+      }else{
+        filtered = enviosData.filter(r=>{
+          const hay = [
+            r.fecha, r.materia, r.parcial, r.semana, r.numeroTarea, r.filename
+          ].map(x=>String(x||'').toLowerCase());
+          return hay.some(v=>v.includes(q));
+        });
+      }
+      currentPage = 1;
+      renderEnviosTable();
+    }
+
+    function renderEnviosTable(){
+      const tbody=$('envios-tbody');
+      tbody.innerHTML='';
+      const total = filtered.length;
+      pageSize = parseInt($('pageSize').value || '10',10);
+      const totalPages = Math.max(1, Math.ceil(total / pageSize));
+      currentPage = Math.min(currentPage, totalPages);
+
+      const start = (currentPage-1)*pageSize;
+      const pageItems = filtered.slice(start, start+pageSize);
+
+      if(pageItems.length===0){
+        tbody.innerHTML = `<tr><td class="px-4 py-4 text-slate-500 italic" colspan="6">Sin envíos.</td></tr>`;
+      }else{
+        pageItems.forEach(r=>{
+          const tr=document.createElement('tr');
+          tr.innerHTML=`
+            <td class="px-4 py-2">${r.fecha||''}</td>
+            <td class="px-4 py-2">${r.materia||''}</td>
+            <td class="px-4 py-2">${r.parcial||''}</td>
+            <td class="px-4 py-2">${r.semana||''}</td>
+            <td class="px-4 py-2">${r.numeroTarea||''}</td>
+            <td class="px-4 py-2">
+              ${r.fileUrl ? `<a class="text-blue-600 underline" target="_blank" href="${r.fileUrl}">${r.filename||'Abrir'}</a>` : (r.filename||'')}
+            </td>`;
+          tbody.appendChild(tr);
+        });
+      }
+
+      $('envios-count').textContent = `${total} registro${total===1?'':'s'}`;
+      $('pageInfo').textContent = `${total===0?0:currentPage} / ${totalPages}`;
+
+      $('firstPage').disabled = currentPage<=1;
+      $('prevPage').disabled  = currentPage<=1;
+      $('nextPage').disabled  = currentPage>=totalPages;
+      $('lastPage').disabled  = currentPage>=totalPages;
+    }
+
+    // Controles tabla
+    $('searchEnvios').addEventListener('input', ()=>applyFilterAndRender());
+    $('pageSize').addEventListener('change', ()=>{ currentPage=1; renderEnviosTable(); });
+    $('firstPage').addEventListener('click', ()=>{ currentPage=1; renderEnviosTable(); });
+    $('prevPage').addEventListener('click',  ()=>{ if(currentPage>1) currentPage--; renderEnviosTable(); });
+    $('nextPage').addEventListener('click',  ()=>{ currentPage++; renderEnviosTable(); });
+    $('lastPage').addEventListener('click',  ()=>{
+      const totalPages = Math.max(1, Math.ceil(filtered.length / parseInt($('pageSize').value,10)));
+      currentPage = totalPages; renderEnviosTable();
+    });
   </script>
 </body>
 </html>
