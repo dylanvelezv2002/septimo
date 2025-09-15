@@ -18,12 +18,10 @@
     body{font-family:"Inter",system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,"Helvetica Neue",Arial}
     .card{box-shadow:0 20px 60px rgba(0,0,0,.08)}
     input,select{ outline:none }
-    input:focus,select:focus{
-      border-color:var(--brand) !important;
-      box-shadow:0 0 0 6px rgba(47,51,143,.13);
-    }
+    input:focus,select:focus{ border-color:var(--brand) !important; box-shadow:0 0 0 6px rgba(47,51,143,.13) }
     .logo-row img{ height:48px; width:auto; object-fit:contain }
     code{ background:#eef2ff; padding:.1rem .3rem; border-radius:.4rem }
+    .chip{ @apply inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium }
   </style>
 </head>
 <body class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50 text-slate-800">
@@ -38,13 +36,12 @@
           <img src="assets/rrd.png" alt="Carrera" />
         </div>
         <h1 class="text-3xl font-semibold leading-tight">Gestión de Estudiantes</h1>
-        <p class="mt-3 text-slate-600">
-          Portal para subir tareas por semanas y parciales. Acceso por número de cédula.
-        </p>
+        <p class="mt-3 text-slate-600">Portal para subir tareas por semanas y parciales. Acceso por número de cédula.</p>
         <ul class="mt-6 space-y-2 text-slate-700 text-sm">
           <li>• Parciales: 1 y 2</li>
-          <li>• Validación del nombre de archivo obligatoria</li>
+          <li>• Validación de nombre de archivo</li>
           <li>• Registro automático en Google Sheets y Drive</li>
+          <li>• Tareas <b>Individuales / Grupales / Curso</b></li>
         </ul>
       </div>
     </aside>
@@ -59,7 +56,7 @@
             <img src="assets/rrd.png" alt="Carrera" />
           </div>
 
-        <!-- ========== LOGIN ========== -->
+          <!-- ========== LOGIN ========== -->
           <section id="view-login" class="space-y-6">
             <header>
               <h2 class="text-2xl md:text-3xl font-semibold">Ingreso por cédula</h2>
@@ -84,7 +81,7 @@
             </form>
           </section>
 
-        <!-- ========== PANEL (FORMULARIO) ========== -->
+          <!-- ========== PANEL (FORMULARIO) ========== -->
           <section id="view-panel" class="hidden space-y-4">
             <div class="flex items-center justify-between gap-4 flex-wrap">
               <div>
@@ -100,6 +97,7 @@
               </div>
             </div>
 
+            <!-- FORM -->
             <form id="form-upload" class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <!-- Materia -->
               <div class="md:col-span-2">
@@ -126,6 +124,40 @@
                 </select>
               </div>
 
+              <!-- Tipo de entrega -->
+              <div class="md:col-span-2">
+                <label class="block text-sm font-medium mb-1">Tipo de entrega</label>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <label class="flex items-center gap-2 rounded-xl border px-4 py-3 hover:bg-slate-50 cursor-pointer">
+                    <input type="radio" name="tipoEntrega" value="INDIVIDUAL" class="accent-[var(--brand)]" checked>
+                    <span>Individual</span>
+                  </label>
+                  <label class="flex items-center gap-2 rounded-xl border px-4 py-3 hover:bg-slate-50 cursor-pointer">
+                    <input type="radio" name="tipoEntrega" value="GRUPAL" class="accent-[var(--brand)]">
+                    <span>Grupal</span>
+                  </label>
+                  <label class="flex items-center gap-2 rounded-xl border px-4 py-3 hover:bg-slate-50 cursor-pointer">
+                    <input type="radio" name="tipoEntrega" value="CURSO" class="accent-[var(--brand)]">
+                    <span>Curso</span>
+                  </label>
+                </div>
+                <p class="text-xs text-slate-500 mt-1">En grupal selecciona a tus integrantes; en curso no es necesario (un envío por curso).</p>
+              </div>
+
+              <!-- Integrantes (solo GRUPAL) -->
+              <div id="grupo-container" class="md:col-span-2 hidden">
+                <div class="rounded-xl border border-slate-200 p-4 bg-slate-50">
+                  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                    <div class="font-medium">Integrantes del grupo</div>
+                    <div class="flex items-center gap-2">
+                      <input id="buscarIntegrante" placeholder="Buscar por cédula o nombre..." class="rounded-lg border border-slate-300 px-3 py-2 text-sm w-64">
+                      <span class="text-xs text-slate-500" id="countSel">0 seleccionados</span>
+                    </div>
+                  </div>
+                  <div id="listaIntegrantes" class="mt-3 grid grid-cols-1 md:grid-cols-2 gap-2 max-h-64 overflow-auto pr-1"></div>
+                </div>
+              </div>
+
               <div>
                 <label class="block text-sm font-medium mb-1">N.º de tarea</label>
                 <input id="numeroTarea" type="number" min="1" max="99" placeholder="01"
@@ -135,29 +167,24 @@
 
               <div>
                 <label class="block text-sm font-medium mb-1">Archivo</label>
-                <input id="archivo" type="file"
-                       class="w-full rounded-xl border border-slate-300 px-4 py-2 bg-white" required>
+                <input id="archivo" type="file" class="w-full rounded-xl border border-slate-300 px-4 py-2 bg-white" required>
                 <p class="text-xs text-slate-500 mt-1">Formatos: PDF, DOCX, PPTX, XLSX, JPG, PNG (≤ 25 MB)</p>
               </div>
 
-              <!-- Renombrado en el sistema -->
+              <!-- Renombrado -->
               <div class="md:col-span-2 bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-2">
                 <p class="text-sm">
-                  Nombre sugerido (base):
+                  Nombre sugerido:
                   <code class="font-mono text-[var(--brand)]" id="nombre-ejemplo">ABBR_SEMANA_1_NOMBRE_APELLIDO_01</code>
                 </p>
                 <div class="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-2 items-center">
                   <div>
-                    <label class="block text-xs text-slate-500 mb-1">Nombre final (se guardará como)</label>
-                    <input id="nombre-final" type="text" placeholder="Selecciona un archivo para sugerir la extensión"
-                           class="w-full rounded-lg border border-slate-300 px-3 py-2 font-mono">
+                    <label class="block text-xs text-slate-500 mb-1">Nombre final</label>
+                    <input id="nombre-final" type="text" class="w-full rounded-lg border border-slate-300 px-3 py-2 font-mono" placeholder="Selecciona un archivo para sugerir la extensión">
                   </div>
-                  <button id="btn-aplicar-nombre" type="button"
-                          class="text-sm px-3 py-2 rounded-lg border border-slate-300 hover:bg-slate-100">
-                    Aplicar nombre sugerido
-                  </button>
+                  <button id="btn-aplicar-nombre" type="button" class="text-sm px-3 py-2 rounded-lg border border-slate-300 hover:bg-slate-100">Aplicar sugerido</button>
                 </div>
-                <p class="text-xs text-slate-500">Puedes editar el nombre aquí. Si no coincide con el formato requerido, el sistema te propondrá renombrarlo automáticamente antes de enviar.</p>
+                <p class="text-xs text-slate-500">Si no coincide el formato, te proponemos renombrar antes de enviar.</p>
               </div>
 
               <div class="md:col-span-2 flex justify-end gap-3 mt-2">
@@ -174,7 +201,7 @@
     </main>
   </div>
 
-  <!-- ========== SECCIÓN INDEPENDIENTE DE ENVIOS (ABAJO) ========== -->
+  <!-- ========== MIS ENVIOS ========== -->
   <section id="envios-section" class="px-6 py-10 hidden">
     <div class="max-w-5xl mx-auto card bg-white rounded-2xl p-6 md:p-8">
       <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
@@ -248,14 +275,12 @@
       'Cambio Climático': 'CC'
     };
 
-    /* ============ SESIÓN PERSISTENTE ============ */
+    /* ============ SESIÓN ============ */
     const SESSION_KEY = 'sesionAlumno';
     const SESSION_TTL_MIN = 180; // 3 horas
     const now = ()=>Date.now();
 
-    const saveSession = (student)=>{
-      localStorage.setItem(SESSION_KEY, JSON.stringify({ student, ts: now() }));
-    };
+    const saveSession = (student)=> localStorage.setItem(SESSION_KEY, JSON.stringify({ student, ts: now() }));
     const loadSession = ()=>{
       try{
         const raw = localStorage.getItem(SESSION_KEY);
@@ -296,6 +321,8 @@
       $('view-panel').classList.toggle('hidden',showLogin);
     };
 
+    const normId = (x)=> String(x||'').replace(/\D/g,'').replace(/^0+/, '') || '0';
+
     /* ====== Validador EC (cédula/RUC) ====== */
     function validarCedulaEC(ced) {
       if (!/^\d{10}$/.test(ced)) return false;
@@ -319,11 +346,11 @@
       return false;
     }
 
-    /* ============ ESTADO ENVIOS (buscador + paginación) ============ */
+    /* ============ ESTADO ENVIOS ============ */
     let alumno=null;
     let currentExt='';
-    let enviosData = [];    // items del backend
-    let filtered = [];      // luego del buscador
+    let enviosData = [];
+    let filtered = [];
     let pageSize = 10;
     let currentPage = 1;
 
@@ -386,11 +413,7 @@
       Swal.showLoading();
       try{
         const res = await fetch(`${SCRIPT_URL}?action=auth&cedula=${encodeURIComponent(cedula)}`);
-        const text = await res.text();
-        let data;
-        try { data = JSON.parse(text); }
-        catch { return Swal.fire({icon:'error', title:'No es JSON', html:'Verifica /exec + permisos.'}); }
-
+        const data = await res.json();
         if(data.ok){
           alumno=data.student;
           saveSession(alumno);
@@ -415,9 +438,7 @@
     $('btn-salir').addEventListener('click', ()=>{
       alumno=null; clearSession(); toggleViews(true); $('form-login').reset();
       document.getElementById('envios-section').classList.add('hidden');
-      $('envios-tbody').innerHTML='';
-      $('envios-count').textContent='0 registros';
-      $('pageInfo').textContent='1 / 1';
+      $('envios-tbody').innerHTML=''; $('envios-count').textContent='0 registros'; $('pageInfo').textContent='1 / 1';
     });
 
     // Restaurar sesión al cargar
@@ -432,7 +453,85 @@
       cargarMisEnvios();
     })();
 
-    /* ============ SUBIDA (JSON base64, sin Content-Type) ============ */
+    /* ============ TIPO: INDIVIDUAL/GRUPAL/CURSO ============ */
+    let allStudents = [];         // {cedula, nombres, apellidos}
+    let groupSelected = new Set();// cédulas normalizadas
+    const tipoRadios = () => [...document.querySelectorAll('input[name="tipoEntrega"]')];
+
+    function showGrupoUI(show){
+      $('grupo-container').classList.toggle('hidden', !show);
+      if (!show) {
+        groupSelected.clear();
+        updateCountSel();
+      }
+    }
+
+    async function ensureStudentsLoaded(){
+      if (allStudents.length) return;
+      try {
+        const r = await fetch(`${SCRIPT_URL}?action=students&t=${Date.now()}`);
+        const j = await r.json();
+        allStudents = (j.ok ? j.students : []).map(s => ({
+          cedula: normId(s.cedula),
+          nombres: s.nombres || '',
+          apellidos: s.apellidos || ''
+        })).sort((a,b)=> (a.apellidos+' '+a.nombres).localeCompare(b.apellidos+' '+b.nombres,'es'));
+      } catch { allStudents = []; }
+    }
+
+    function paintStudents(filter=''){
+      const cont = $('listaIntegrantes');
+      const term = filter.toLowerCase().trim();
+      const me = alumno ? normId(alumno.cedula) : '';
+      const items = allStudents.filter(s => {
+        if (s.cedula === me) return true; // que el propio alumno se vea primero
+        if (!term) return true;
+        return s.cedula.includes(term) || (s.nombres+' '+s.apellidos).toLowerCase().includes(term);
+      });
+
+      cont.innerHTML = items.map(s=>{
+        const checked = groupSelected.has(s.cedula) || s.cedula===me;
+        const disabled = s.cedula===me; // el que sube siempre va
+        return `<label class="flex items-center gap-3 rounded-lg border bg-white px-3 py-2 hover:bg-slate-50">
+          <input type="checkbox" data-ced="${s.cedula}" class="accent-[var(--brand)]" ${checked?'checked':''} ${disabled?'disabled':''}>
+          <span class="text-sm">${s.cedula} — ${s.apellidos} ${s.nombres}</span>
+        </label>`;
+      }).join('');
+
+      // listeners
+      cont.querySelectorAll('input[type="checkbox"]').forEach(cbx=>{
+        cbx.addEventListener('change', (e)=>{
+          const ced = e.target.dataset.ced;
+          if (e.target.checked) groupSelected.add(ced); else groupSelected.delete(ced);
+          updateCountSel();
+        });
+      });
+
+      // asegurar incluir al propio alumno
+      if (me) groupSelected.add(me);
+      updateCountSel();
+    }
+
+    function updateCountSel(){
+      $('countSel').textContent = `${groupSelected.size} seleccionados`;
+    }
+
+    // Wiring de tipo
+    tipoRadios().forEach(r=>{
+      r.addEventListener('change', async ()=>{
+        const tipo = tipoRadios().find(x=>x.checked)?.value || 'INDIVIDUAL';
+        if (tipo === 'GRUPAL'){
+          showGrupoUI(true);
+          await ensureStudentsLoaded();
+          paintStudents($('buscarIntegrante').value||'');
+        } else {
+          showGrupoUI(false);
+        }
+      });
+    });
+    $('buscarIntegrante').addEventListener('input', (e)=> paintStudents(e.target.value||''));
+
+    /* ============ SUBIDA ============ */
     $('form-upload').addEventListener('submit', async (e)=>{
       e.preventDefault();
       if(!alumno) return Swal.fire({icon:'error',title:'Sesión',text:'Inicia sesión con tu cédula.'});
@@ -444,8 +543,20 @@
       const file=$('archivo').files[0];
       let finalName=($('nombre-final').value||'').trim();
 
+      const tipo = (tipoRadios().find(x=>x.checked)?.value || 'INDIVIDUAL').toUpperCase();
+
       if(!materia||!parcial||!semana||!num||!file)
         return Swal.fire({icon:'warning',title:'Campos incompletos',text:'Completa todos los campos.'});
+
+      if (tipo === 'GRUPAL') {
+        await ensureStudentsLoaded();
+        // el propio alumno siempre incluido
+        const me = normId(alumno.cedula);
+        groupSelected.add(me);
+        if (groupSelected.size < 2) {
+          return Swal.fire({icon:'info',title:'Selecciona el grupo',text:'Elige al menos 2 integrantes (incluyéndote).'});
+        }
+      }
 
       if(file.size>SIZE_LIMIT)
         return Swal.fire({icon:'error',title:'Archivo muy grande',text:'Límite 25 MB.'});
@@ -494,18 +605,22 @@
           apellidos:alumno.apellidos,
           filename:finalName,
           mimeType:file.type,
-          data:base64
+          data:base64,
+          // NUEVO:
+          tipo, // INDIVIDUAL | GRUPAL | CURSO
+          groupMembers: (tipo==='GRUPAL') ? Array.from(groupSelected) : (tipo==='CURSO' ? ['ALL'] : [normId(alumno.cedula)])
         };
 
         const res = await fetch(SCRIPT_URL, { method:'POST', body: JSON.stringify(payload) });
-        const text = await res.text();
-        let data; try{ data = JSON.parse(text); }catch(e){ data=null; }
+        const data = await res.json().catch(()=>null);
 
         if(res.ok && data && data.ok){
           Swal.fire({icon:'success',title:'¡Enviado!',html:`Se subió correctamente.<br><a class="text-blue-600 underline" target="_blank" href="${data.fileUrl}">Ver en Drive</a>`});
           $('form-upload').reset(); currentExt=''; renderSemanas(); $('nombre-final').value='';
+          // reset tipo/ grupo
+          document.querySelector('input[name="tipoEntrega"][value="INDIVIDUAL"]').checked = true;
+          showGrupoUI(false); groupSelected.clear(); updateCountSel();
           cargarMisEnvios(); touchSession();
-          // Bajar a la sección de envíos
           document.getElementById('envios-section').scrollIntoView({behavior:'smooth'});
         }else{
           Swal.fire({icon:'error',title:'Error',text:(data&&data.message)||`No se pudo subir. Estado ${res.status}`});
@@ -515,15 +630,13 @@
       }
     });
 
-    /* ============ LISTAR (sin caché) + BUSCADOR + PAGINACIÓN ============ */
+    /* ============ LISTAR + BUSCADOR + PAGINACIÓN ============ */
     async function cargarMisEnvios(){
       if(!alumno) return;
       try{
         const url = `${SCRIPT_URL}?action=list&cedula=${encodeURIComponent(alumno.cedula)}&t=${Date.now()}`;
         const res = await fetch(url, { cache: 'no-store' });
-        const text = await res.text();
-        let data; try { data = JSON.parse(text); } catch { data=null; }
-
+        const data = await res.json().catch(()=>null);
         enviosData = (data && data.ok && Array.isArray(data.items)) ? data.items : [];
         applyFilterAndRender();
       }catch(err){
@@ -534,16 +647,11 @@
 
     function applyFilterAndRender(){
       const q = ($('searchEnvios').value||'').toLowerCase().trim();
-      if(!q){
-        filtered = enviosData.slice();
-      }else{
-        filtered = enviosData.filter(r=>{
-          const hay = [
-            r.fecha, r.materia, r.parcial, r.semana, r.numeroTarea, r.filename
-          ].map(x=>String(x||'').toLowerCase());
+      filtered = !q ? enviosData.slice() :
+        enviosData.filter(r=>{
+          const hay = [r.fecha, r.materia, r.parcial, r.semana, r.numeroTarea, r.filename].map(x=>String(x||'').toLowerCase());
           return hay.some(v=>v.includes(q));
         });
-      }
       currentPage = 1;
       renderEnviosTable();
     }
