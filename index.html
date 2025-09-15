@@ -5,11 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Gestión de Estudiantes</title>
 
-  <!-- Tailwind -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- SweetAlert2 -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  <!-- Inter font -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet"/>
 
   <style>
@@ -19,18 +16,21 @@
     .card{box-shadow:0 20px 60px rgba(0,0,0,.08)}
     input,select{ outline:none }
     input:focus,select:focus{ border-color:var(--brand) !important; box-shadow:0 0 0 6px rgba(47,51,143,.13) }
-    .logo-row img{ height:48px; width:auto; object-fit:contain }
+    .logo-row img{ height:46px; width:auto; object-fit:contain }
     code{ background:#eef2ff; padding:.1rem .3rem; border-radius:.4rem }
-    .chip{ @apply inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium }
+    .chip{ display:inline-flex; align-items:center; gap:.4rem; padding:.15rem .55rem; border-radius:999px; font-size:.72rem; font-weight:600 }
+    .chip-indigo{ background:#eef2ff; color:#29337a; }
+    .chip-emerald{ background:#ecfdf5; color:#065f46; }
+    .chip-amber{ background:#fffbeb; color:#92400e; }
+    .chip-slate{ background:#f1f5f9; color:#334155; }
   </style>
 </head>
-<body class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50 text-slate-800">
+<body class="min-h-screen bg-gradient-to-b from-slate-50 via-white to-indigo-50 text-slate-800">
 
-  <!-- Sección superior (info izquierda + formulario derecha) -->
-  <div class="min-h-[70vh] grid grid-cols-1 lg:grid-cols-2">
-    <!-- Izquierda -->
-    <aside class="hidden lg:flex flex-col justify-center bg-gradient-to-b from-white via-indigo-50 to-slate-50 text-slate-800 p-10">
-      <div class="max-w-lg mx-auto w-full">
+  <!-- Hero con altura justa (sin hueco) -->
+  <div class="py-10">
+    <div class="mx-auto max-w-7xl grid grid-cols-1 lg:grid-cols-2 gap-8 items-center px-6">
+      <aside class="hidden lg:block">
         <div class="flex items-center gap-4 mb-8 logo-row">
           <img src="assets/ueb.png" alt="UEB" />
           <img src="assets/rrd.png" alt="Carrera" />
@@ -43,14 +43,10 @@
           <li>• Registro automático en Google Sheets y Drive</li>
           <li>• Tareas <b>Individuales / Grupales / Curso</b></li>
         </ul>
-      </div>
-    </aside>
+      </aside>
 
-    <!-- Derecha -->
-    <main class="flex items-center justify-center p-6">
-      <div class="w-full max-w-2xl">
+      <main class="">
         <div class="card bg-white rounded-2xl p-6 md:p-8">
-
           <div class="flex lg:hidden items-center gap-4 mb-6 logo-row">
             <img src="assets/ueb.png" alt="UEB" />
             <img src="assets/rrd.png" alt="Carrera" />
@@ -66,8 +62,7 @@
             <form id="form-login" class="space-y-3">
               <div>
                 <label for="cedula" class="block text-sm font-medium text-slate-700 mb-1">Número de cédula</label>
-                <input id="cedula" name="cedula" inputmode="numeric"
-                       pattern="^(\d{10}|\d{13})$" maxlength="13"
+                <input id="cedula" name="cedula" inputmode="numeric" pattern="^(\d{10}|\d{13})$" maxlength="13"
                        placeholder="Ej: 0102030405"
                        class="w-full rounded-xl border border-slate-300 px-4 py-3" required>
                 <p class="text-xs text-slate-500 mt-1">* Debe estar registrado en la base de datos.</p>
@@ -81,14 +76,14 @@
             </form>
           </section>
 
-          <!-- ========== PANEL (FORMULARIO) ========== -->
+          <!-- ========== PANEL (FORM) ========== -->
           <section id="view-panel" class="hidden space-y-4">
             <div class="flex items-center justify-between gap-4 flex-wrap">
               <div>
                 <h2 class="text-2xl md:text-3xl font-semibold">Bienvenido</h2>
                 <p class="text-slate-600">
-                  <span id="alumno-nombre" class="font-semibold"></span> &middot;
-                  Cédula: <span id="alumno-cedula" class="font-mono"></span>
+                  <span id="alumno-nombre" class="font-semibold"></span> &middot; Cédula:
+                  <span id="alumno-cedula" class="font-mono"></span>
                 </p>
               </div>
               <div class="flex gap-2">
@@ -97,7 +92,6 @@
               </div>
             </div>
 
-            <!-- FORM -->
             <form id="form-upload" class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <!-- Materia -->
               <div class="md:col-span-2">
@@ -105,7 +99,6 @@
                 <select id="materia" class="w-full rounded-xl border border-slate-300 px-4 py-3" required>
                   <option value="" disabled selected>Selecciona</option>
                 </select>
-                <p class="text-xs text-slate-500 mt-1">* Se usará para la carpeta en Drive.</p>
               </div>
 
               <div>
@@ -141,7 +134,7 @@
                     <span>Curso</span>
                   </label>
                 </div>
-                <p class="text-xs text-slate-500 mt-1">En grupal selecciona a tus integrantes; en curso no es necesario (un envío por curso).</p>
+                <p class="text-xs text-slate-500 mt-1">En grupal selecciona a tus integrantes; en curso no es necesario.</p>
               </div>
 
               <!-- Integrantes (solo GRUPAL) -->
@@ -171,12 +164,15 @@
                 <p class="text-xs text-slate-500 mt-1">Formatos: PDF, DOCX, PPTX, XLSX, JPG, PNG (≤ 25 MB)</p>
               </div>
 
-              <!-- Renombrado -->
+              <!-- Renombrado (mostramos chip de tipo) -->
               <div class="md:col-span-2 bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-2">
-                <p class="text-sm">
-                  Nombre sugerido:
-                  <code class="font-mono text-[var(--brand)]" id="nombre-ejemplo">ABBR_SEMANA_1_NOMBRE_APELLIDO_01</code>
-                </p>
+                <div class="flex items-center justify-between gap-2">
+                  <p class="text-sm">
+                    Nombre base:
+                    <code class="font-mono text-[var(--brand)]" id="nombre-ejemplo">ABBR_SEMANA_1_NOMBRE_APELLIDO_01</code>
+                  </p>
+                  <span id="chip-tipo" class="chip chip-indigo">Individual</span>
+                </div>
                 <div class="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-2 items-center">
                   <div>
                     <label class="block text-xs text-slate-500 mb-1">Nombre final</label>
@@ -184,7 +180,7 @@
                   </div>
                   <button id="btn-aplicar-nombre" type="button" class="text-sm px-3 py-2 rounded-lg border border-slate-300 hover:bg-slate-100">Aplicar sugerido</button>
                 </div>
-                <p class="text-xs text-slate-500">Si no coincide el formato, te proponemos renombrar antes de enviar.</p>
+                <p class="text-xs text-slate-500">El nombre sigue el formato estándar; el tipo se identifica con esta etiqueta y en la tabla.</p>
               </div>
 
               <div class="md:col-span-2 flex justify-end gap-3 mt-2">
@@ -197,16 +193,17 @@
           </section>
 
         </div>
-      </div>
-    </main>
+      </main>
+    </div>
   </div>
 
   <!-- ========== MIS ENVIOS ========== -->
-  <section id="envios-section" class="px-6 py-10 hidden">
-    <div class="max-w-5xl mx-auto card bg-white rounded-2xl p-6 md:p-8">
+  <section id="envios-section" class="px-6 pb-14">
+    <div class="max-w-7xl mx-auto card bg-white rounded-2xl p-6 md:p-8">
       <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
         <h3 class="text-2xl font-semibold">Mis envíos</h3>
         <div class="flex gap-3 items-center">
+          <div id="envios-loading" class="hidden text-sm text-slate-500">Actualizando…</div>
           <input id="searchEnvios" class="rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="Buscar...">
           <label class="text-sm text-slate-600">Por página
             <select id="pageSize" class="ml-2 rounded-md border border-slate-300 px-2 py-1 text-sm">
@@ -225,6 +222,7 @@
               <th class="text-left px-4 py-2">Parcial</th>
               <th class="text-left px-4 py-2">Semana</th>
               <th class="text-left px-4 py-2">Tarea</th>
+              <th class="text-left px-4 py-2">Tipo</th>
               <th class="text-left px-4 py-2">Archivo</th>
             </tr>
           </thead>
@@ -257,27 +255,15 @@
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet','application/vnd.ms-excel','image/jpeg','image/png'
     ];
 
-    // Materias/abreviaturas (debe coincidir con backend)
     const MATERIAS = [
-      'Marco Legal para la Gestión del Riesgo',
-      'Administración',
-      'Sistemas de Información Geográfica Aplicado',
-      'Evaluación de Amenazas',
-      'Evaluación de Vulnerabilidades',
-      'Cambio Climático'
+      'Marco Legal para la Gestión del Riesgo','Administración','Sistemas de Información Geográfica Aplicado',
+      'Evaluación de Amenazas','Evaluación de Vulnerabilidades','Cambio Climático'
     ];
-    const MATERIA_ABBR = {
-      'Marco Legal para la Gestión del Riesgo': 'MLGR',
-      'Administración': 'ADM',
-      'Sistemas de Información Geográfica Aplicado': 'SIG',
-      'Evaluación de Amenazas': 'EA',
-      'Evaluación de Vulnerabilidades': 'EV',
-      'Cambio Climático': 'CC'
-    };
+    const MATERIA_ABBR = { 'Marco Legal para la Gestión del Riesgo': 'MLGR','Administración':'ADM','Sistemas de Información Geográfica Aplicado':'SIG','Evaluación de Amenazas':'EA','Evaluación de Vulnerabilidades':'EV','Cambio Climático':'CC' };
 
     /* ============ SESIÓN ============ */
     const SESSION_KEY = 'sesionAlumno';
-    const SESSION_TTL_MIN = 180; // 3 horas
+    const SESSION_TTL_MIN = 180;
     const now = ()=>Date.now();
 
     const saveSession = (student)=> localStorage.setItem(SESSION_KEY, JSON.stringify({ student, ts: now() }));
@@ -293,12 +279,7 @@
       }catch{ return null; }
     };
     const touchSession = ()=>{
-      try{
-        const raw = localStorage.getItem(SESSION_KEY);
-        if(!raw) return;
-        const obj = JSON.parse(raw); obj.ts = now();
-        localStorage.setItem(SESSION_KEY, JSON.stringify(obj));
-      }catch{}
+      try{ const raw = localStorage.getItem(SESSION_KEY); if(!raw) return; const obj = JSON.parse(raw); obj.ts = now(); localStorage.setItem(SESSION_KEY, JSON.stringify(obj)); }catch{}
     };
     const clearSession = ()=> localStorage.removeItem(SESSION_KEY);
 
@@ -308,6 +289,7 @@
     const slugUpper=(s)=>sinAcentos(String(s||'').trim()).replace(/[^A-Za-z\s]/g,'').replace(/\s+/g,'_').toUpperCase();
     const pad2=(n)=>String(n).padStart(2,'0');
     const getExt=(name)=>{ const m = String(name).match(/\.([^.]+)$/); return m? m[1] : ''; };
+    const normId=(x)=> String(x||'').replace(/\D/g,'').replace(/^0+/, '') || '0';
 
     const abbr=(materia)=> MATERIA_ABBR[materia] || 'ABBR';
     const nombreEsperado=(materia,semana,nombres,apellidos,num)=>{
@@ -321,9 +303,7 @@
       $('view-panel').classList.toggle('hidden',showLogin);
     };
 
-    const normId = (x)=> String(x||'').replace(/\D/g,'').replace(/^0+/, '') || '0';
-
-    /* ====== Validador EC (cédula/RUC) ====== */
+    /* ====== Validación EC ====== */
     function validarCedulaEC(ced) {
       if (!/^\d{10}$/.test(ced)) return false;
       const prov = parseInt(ced.slice(0,2),10);
@@ -331,13 +311,8 @@
       const d = ced.split('').map(n=>parseInt(n,10));
       const coef = [2,1,2,1,2,1,2,1,2];
       let suma = 0;
-      for (let i=0;i<9;i++){
-        let prod = d[i]*coef[i];
-        if (prod >= 10) prod -= 9;
-        suma += prod;
-      }
-      const mod = suma % 10;
-      const verificador = (mod === 0) ? 0 : 10 - mod;
+      for (let i=0;i<9;i++){ let prod = d[i]*coef[i]; if (prod >= 10) prod -= 9; suma += prod; }
+      const mod = suma % 10; const verificador = (mod === 0) ? 0 : 10 - mod;
       return verificador === d[9];
     }
     function validarIdentificacionEC(ident){
@@ -347,34 +322,26 @@
     }
 
     /* ============ ESTADO ENVIOS ============ */
-    let alumno=null;
-    let currentExt='';
-    let enviosData = [];
-    let filtered = [];
-    let pageSize = 10;
-    let currentPage = 1;
+    let alumno=null, currentExt='', enviosData=[], filtered=[], pageSize=10, currentPage=1;
+    let pollTimer=null;
 
-    // Pinta materias
     (function fillMaterias(){
-      const sel = $('materia');
-      MATERIAS.forEach(m=>{
-        const op = document.createElement('option');
-        op.value = m; op.textContent = m;
-        sel.appendChild(op);
-      });
+      const sel = $('materia'); MATERIAS.forEach(m=>{ const op=document.createElement('option'); op.value=m; op.textContent=m; sel.appendChild(op); });
     })();
 
     const renderSemanas=()=>{
-      const parcial=$('parcial').value;
-      const sel=$('semana');
+      const parcial=$('parcial').value, sel=$('semana');
       sel.innerHTML='<option value="" disabled selected>Selecciona</option>';
       if(!parcial) return;
-      for(let i=1;i<=SEMANAS_POR_PARCIAL;i++){
-        const op=document.createElement('option');
-        op.value=String(i); op.textContent=`Semana ${i}`;
-        sel.appendChild(op);
-      }
+      for(let i=1;i<=SEMANAS_POR_PARCIAL;i++){ const op=document.createElement('option'); op.value=String(i); op.textContent=`Semana ${i}`; sel.appendChild(op); }
     };
+
+    function updateChipTipo(tipo, integrantesCount=0){
+      const chip = $('chip-tipo');
+      if (tipo==='GRUPAL'){ chip.className='chip chip-amber'; chip.textContent=`Grupal (${integrantesCount})`; }
+      else if (tipo==='CURSO'){ chip.className='chip chip-emerald'; chip.textContent='Curso'; }
+      else { chip.className='chip chip-indigo'; chip.textContent='Individual'; }
+    }
 
     const refreshEjemplo=()=>{
       const materia=$('materia').value || '';
@@ -400,70 +367,58 @@
       $('nombre-final').placeholder = `${base}.${currentExt}`;
     });
 
-    /* ============ LOGIN ============ */
+    /* ============ LOGIN / LOGOUT ============ */
     $('form-login').addEventListener('submit', async (e)=>{
       e.preventDefault();
-      const cedula=$('cedula').value.trim();
-      if(!cedula) return;
-
-      if (!validarIdentificacionEC(cedula)) {
-        return Swal.fire({icon:'warning',title:'Número inválido',text:'Revisa tu cédula (10) o RUC (13).'});
-      }
+      const cedula=$('cedula').value.trim(); if(!cedula) return;
+      if (!validarIdentificacionEC(cedula)) return Swal.fire({icon:'warning',title:'Número inválido',text:'Revisa tu cédula (10) o RUC (13).'});
 
       Swal.showLoading();
       try{
         const res = await fetch(`${SCRIPT_URL}?action=auth&cedula=${encodeURIComponent(cedula)}`);
         const data = await res.json();
         if(data.ok){
-          alumno=data.student;
-          saveSession(alumno);
+          alumno=data.student; saveSession(alumno);
           $('alumno-nombre').textContent=`${alumno.nombres} ${alumno.apellidos}`;
           $('alumno-cedula').textContent=alumno.cedula;
           toggleViews(false); renderSemanas(); refreshEjemplo(); Swal.close();
+          // bienvenida
+          Swal.fire({icon:'success',title:`¡Hola, ${alumno.nombres.split(' ')[0]}!`,text:'Bienvenido al portal de entregas.',timer:1800,showConfirmButton:false});
           document.getElementById('envios-section').classList.remove('hidden');
+          startPolling();
           cargarMisEnvios();
         }else{
           Swal.fire({icon:'error',title:'No autorizado',text:'La cédula no está registrada.'});
         }
-      }catch(err){
-        Swal.fire({icon:'error',title:'Error de conexión',text:'Revisa la URL /exec.'});
-      }
+      }catch{ Swal.fire({icon:'error',title:'Error de conexión',text:'Revisa la URL /exec.'}); }
     });
 
-    $('parcial').addEventListener('change', ()=>{renderSemanas(); refreshEjemplo(); touchSession();});
-    $('semana').addEventListener('change', ()=>{refreshEjemplo(); touchSession();});
-    $('materia').addEventListener('change', ()=>{refreshEjemplo(); touchSession();});
-    $('numeroTarea').addEventListener('input', ()=>{refreshEjemplo(); touchSession();});
-
-    $('btn-salir').addEventListener('click', ()=>{
+    $('btn-salir').addEventListener('click', async ()=>{
+      const {isConfirmed} = await Swal.fire({icon:'question',title:'¿Cerrar sesión?',showCancelButton:true,confirmButtonText:'Sí',cancelButtonText:'No'});
+      if(!isConfirmed) return;
+      stopPolling();
       alumno=null; clearSession(); toggleViews(true); $('form-login').reset();
       document.getElementById('envios-section').classList.add('hidden');
       $('envios-tbody').innerHTML=''; $('envios-count').textContent='0 registros'; $('pageInfo').textContent='1 / 1';
     });
 
-    // Restaurar sesión al cargar
     (function restore(){
-      const s = loadSession();
-      if(!s) return;
+      const s = loadSession(); if(!s) return;
       alumno = s;
       $('alumno-nombre').textContent=`${alumno.nombres} ${alumno.apellidos}`;
       $('alumno-cedula').textContent=alumno.cedula;
       toggleViews(false); renderSemanas(); refreshEjemplo();
       document.getElementById('envios-section').classList.remove('hidden');
-      cargarMisEnvios();
+      startPolling(); cargarMisEnvios();
     })();
 
     /* ============ TIPO: INDIVIDUAL/GRUPAL/CURSO ============ */
-    let allStudents = [];         // {cedula, nombres, apellidos}
-    let groupSelected = new Set();// cédulas normalizadas
+    let allStudents = []; let groupSelected = new Set();
     const tipoRadios = () => [...document.querySelectorAll('input[name="tipoEntrega"]')];
 
     function showGrupoUI(show){
       $('grupo-container').classList.toggle('hidden', !show);
-      if (!show) {
-        groupSelected.clear();
-        updateCountSel();
-      }
+      if (!show) { groupSelected.clear(); updateChipTipo('INDIVIDUAL'); $('countSel').textContent='0 seleccionados'; }
     }
 
     async function ensureStudentsLoaded(){
@@ -483,182 +438,153 @@
       const cont = $('listaIntegrantes');
       const term = filter.toLowerCase().trim();
       const me = alumno ? normId(alumno.cedula) : '';
-      const items = allStudents.filter(s => {
-        if (s.cedula === me) return true; // que el propio alumno se vea primero
-        if (!term) return true;
-        return s.cedula.includes(term) || (s.nombres+' '+s.apellidos).toLowerCase().includes(term);
-      });
+      const items = allStudents.filter(s => !term || s.cedula.includes(term) || (s.nombres+' '+s.apellidos).toLowerCase().includes(term));
 
       cont.innerHTML = items.map(s=>{
         const checked = groupSelected.has(s.cedula) || s.cedula===me;
-        const disabled = s.cedula===me; // el que sube siempre va
+        const disabled = s.cedula===me;
         return `<label class="flex items-center gap-3 rounded-lg border bg-white px-3 py-2 hover:bg-slate-50">
           <input type="checkbox" data-ced="${s.cedula}" class="accent-[var(--brand)]" ${checked?'checked':''} ${disabled?'disabled':''}>
           <span class="text-sm">${s.cedula} — ${s.apellidos} ${s.nombres}</span>
         </label>`;
       }).join('');
 
-      // listeners
       cont.querySelectorAll('input[type="checkbox"]').forEach(cbx=>{
         cbx.addEventListener('change', (e)=>{
           const ced = e.target.dataset.ced;
           if (e.target.checked) groupSelected.add(ced); else groupSelected.delete(ced);
-          updateCountSel();
+          $('countSel').textContent = `${groupSelected.size} seleccionados`;
+          updateChipTipo('GRUPAL', groupSelected.size || 1);
         });
       });
 
-      // asegurar incluir al propio alumno
-      if (me) groupSelected.add(me);
-      updateCountSel();
+      if (me) { groupSelected.add(me); $('countSel').textContent = `${groupSelected.size} seleccionados`; }
+      updateChipTipo('GRUPAL', groupSelected.size || 1);
     }
 
-    function updateCountSel(){
-      $('countSel').textContent = `${groupSelected.size} seleccionados`;
-    }
-
-    // Wiring de tipo
     tipoRadios().forEach(r=>{
       r.addEventListener('change', async ()=>{
         const tipo = tipoRadios().find(x=>x.checked)?.value || 'INDIVIDUAL';
         if (tipo === 'GRUPAL'){
           showGrupoUI(true);
-          await ensureStudentsLoaded();
-          paintStudents($('buscarIntegrante').value||'');
+          await ensureStudentsLoaded(); paintStudents($('buscarIntegrante').value||'');
         } else {
           showGrupoUI(false);
+          updateChipTipo(tipo);
         }
       });
     });
     $('buscarIntegrante').addEventListener('input', (e)=> paintStudents(e.target.value||''));
 
     /* ============ SUBIDA ============ */
+    $('parcial').addEventListener('change', ()=>{renderSemanas(); refreshEjemplo(); touchSession();});
+    $('semana').addEventListener('change', ()=>{refreshEjemplo(); touchSession();});
+    $('materia').addEventListener('change', ()=>{refreshEjemplo(); touchSession();});
+    $('numeroTarea').addEventListener('input', ()=>{refreshEjemplo(); touchSession();});
+
     $('form-upload').addEventListener('submit', async (e)=>{
       e.preventDefault();
       if(!alumno) return Swal.fire({icon:'error',title:'Sesión',text:'Inicia sesión con tu cédula.'});
 
-      const materia=$('materia').value;
-      const parcial=$('parcial').value;
-      const semana=$('semana').value;
-      const num=$('numeroTarea').value;
-      const file=$('archivo').files[0];
+      const materia=$('materia').value, parcial=$('parcial').value, semana=$('semana').value, num=$('numeroTarea').value, file=$('archivo').files[0];
       let finalName=($('nombre-final').value||'').trim();
-
       const tipo = (tipoRadios().find(x=>x.checked)?.value || 'INDIVIDUAL').toUpperCase();
 
-      if(!materia||!parcial||!semana||!num||!file)
-        return Swal.fire({icon:'warning',title:'Campos incompletos',text:'Completa todos los campos.'});
-
+      if(!materia||!parcial||!semana||!num||!file) return Swal.fire({icon:'warning',title:'Campos incompletos',text:'Completa todos los campos.'});
       if (tipo === 'GRUPAL') {
         await ensureStudentsLoaded();
-        // el propio alumno siempre incluido
-        const me = normId(alumno.cedula);
-        groupSelected.add(me);
-        if (groupSelected.size < 2) {
-          return Swal.fire({icon:'info',title:'Selecciona el grupo',text:'Elige al menos 2 integrantes (incluyéndote).'});
-        }
+        const me = normId(alumno.cedula); groupSelected.add(me);
+        if (groupSelected.size < 2) return Swal.fire({icon:'info',title:'Selecciona el grupo',text:'Elige al menos 2 integrantes (incluyéndote).'});
       }
-
-      if(file.size>SIZE_LIMIT)
-        return Swal.fire({icon:'error',title:'Archivo muy grande',text:'Límite 25 MB.'});
-
-      if(!TIPOS_PERMITIDOS.includes(file.type))
-        return Swal.fire({icon:'warning',title:'Formato no permitido',text:'Sube PDF/DOCX/PPTX/XLSX/JPG/PNG.'});
-
+      if(file.size>SIZE_LIMIT) return Swal.fire({icon:'error',title:'Archivo muy grande',text:'Límite 25 MB.'});
       const esperado=$('nombre-ejemplo').textContent.trim();
       const ext=(file.name.match(/\.([^.]+)$/)||['','pdf'])[1];
       const baseFinal=finalName.replace(/\.[^.]+$/,'').trim();
 
       if(baseFinal!==esperado){
-        const { isConfirmed } = await Swal.fire({
-          icon:'question',
-          title:'Renombrar archivo',
-          html:`El nombre debe ser <code>${esperado}</code>.<br><br>¿Deseas que el sistema lo renombre automáticamente antes de enviar?`,
-          showCancelButton:true, confirmButtonText:'Sí, renombrar', cancelButtonText:'Cancelar'
-        });
+        const { isConfirmed } = await Swal.fire({icon:'question',title:'Renombrar archivo',html:`El nombre debe ser <code>${esperado}</code>.<br><br>¿Deseas que el sistema lo renombre automáticamente antes de enviar?`,showCancelButton:true, confirmButtonText:'Sí, renombrar'});
         if(!isConfirmed) return;
         finalName = `${esperado}.${ext}`;
         $('nombre-final').value = finalName;
       }else if(!/\.[^.]+$/.test(finalName)){
-        finalName = `${baseFinal}.${ext}`;
-        $('nombre-final').value = finalName;
+        finalName = `${baseFinal}.${ext}`; $('nombre-final').value = finalName;
       }
 
-      Swal.showLoading();
-      touchSession();
+      Swal.showLoading(); touchSession();
 
-      const base64 = await new Promise((ok,err)=>{
-        const fr=new FileReader();
-        fr.onload=()=>ok(String(fr.result).split(',')[1]);
-        fr.onerror=err;
-        fr.readAsDataURL(file);
-      });
+      const base64 = await new Promise((ok,err)=>{ const fr=new FileReader(); fr.onload=()=>ok(String(fr.result).split(',')[1]); fr.onerror=err; fr.readAsDataURL(file); });
 
       try{
         const payload={
           action:'upload',
-          cedula:alumno.cedula,
-          materia:String(materia),
-          parcial:String(parcial),
-          semana:String(semana),
-          numeroTarea:String(num).padStart(2,'0'),
-          nombres:alumno.nombres,
-          apellidos:alumno.apellidos,
-          filename:finalName,
-          mimeType:file.type,
-          data:base64,
-          // NUEVO:
-          tipo, // INDIVIDUAL | GRUPAL | CURSO
+          cedula:alumno.cedula, materia:String(materia), parcial:String(parcial), semana:String(semana),
+          numeroTarea:String(num).padStart(2,'0'), nombres:alumno.nombres, apellidos:alumno.apellidos,
+          filename:finalName, mimeType:file.type, data:base64,
+          tipo,
           groupMembers: (tipo==='GRUPAL') ? Array.from(groupSelected) : (tipo==='CURSO' ? ['ALL'] : [normId(alumno.cedula)])
         };
-
         const res = await fetch(SCRIPT_URL, { method:'POST', body: JSON.stringify(payload) });
         const data = await res.json().catch(()=>null);
 
         if(res.ok && data && data.ok){
           Swal.fire({icon:'success',title:'¡Enviado!',html:`Se subió correctamente.<br><a class="text-blue-600 underline" target="_blank" href="${data.fileUrl}">Ver en Drive</a>`});
           $('form-upload').reset(); currentExt=''; renderSemanas(); $('nombre-final').value='';
-          // reset tipo/ grupo
           document.querySelector('input[name="tipoEntrega"][value="INDIVIDUAL"]').checked = true;
-          showGrupoUI(false); groupSelected.clear(); updateCountSel();
+          showGrupoUI(false); groupSelected.clear(); updateChipTipo('INDIVIDUAL');
           cargarMisEnvios(); touchSession();
           document.getElementById('envios-section').scrollIntoView({behavior:'smooth'});
         }else{
           Swal.fire({icon:'error',title:'Error',text:(data&&data.message)||`No se pudo subir. Estado ${res.status}`});
         }
-      }catch(err){
-        Swal.fire({icon:'error',title:'Error de conexión',text:'Intenta nuevamente.'});
-      }
+      }catch{ Swal.fire({icon:'error',title:'Error de conexión',text:'Intenta nuevamente.'}); }
     });
 
-    /* ============ LISTAR + BUSCADOR + PAGINACIÓN ============ */
-    async function cargarMisEnvios(){
+    /* ============ LISTAR + POLLING ============ */
+    async function cargarMisEnvios(showLoading=true){
       if(!alumno) return;
       try{
+        if(showLoading) $('envios-loading').classList.remove('hidden');
         const url = `${SCRIPT_URL}?action=list&cedula=${encodeURIComponent(alumno.cedula)}&t=${Date.now()}`;
         const res = await fetch(url, { cache: 'no-store' });
         const data = await res.json().catch(()=>null);
         enviosData = (data && data.ok && Array.isArray(data.items)) ? data.items : [];
         applyFilterAndRender();
-      }catch(err){
-        enviosData = [];
-        applyFilterAndRender();
+      }catch{
+        enviosData = []; applyFilterAndRender();
+      }finally{
+        $('envios-loading').classList.add('hidden');
       }
     }
+    function startPolling(){
+      stopPolling();
+      pollTimer = setInterval(()=>cargarMisEnvios(false), 30000);
+      window.addEventListener('focus', onFocusReload);
+    }
+    function stopPolling(){
+      if (pollTimer){ clearInterval(pollTimer); pollTimer=null; }
+      window.removeEventListener('focus', onFocusReload);
+    }
+    function onFocusReload(){ cargarMisEnvios(false); }
 
     function applyFilterAndRender(){
       const q = ($('searchEnvios').value||'').toLowerCase().trim();
       filtered = !q ? enviosData.slice() :
         enviosData.filter(r=>{
-          const hay = [r.fecha, r.materia, r.parcial, r.semana, r.numeroTarea, r.filename].map(x=>String(x||'').toLowerCase());
+          const hay = [r.fecha, r.materia, r.parcial, r.semana, r.numeroTarea, r.filename, r.tipo].map(x=>String(x||'').toLowerCase());
           return hay.some(v=>v.includes(q));
         });
-      currentPage = 1;
-      renderEnviosTable();
+      currentPage = 1; renderEnviosTable();
+    }
+
+    function tipoChip(tipo, grupo){
+      const g = (typeof grupo==='string' ? grupo : '');
+      if (String(tipo).toUpperCase()==='GRUPAL') return `<span class="chip chip-amber" title="${g?g:''}">Grupal</span>`;
+      if (String(tipo).toUpperCase()==='CURSO')  return `<span class="chip chip-emerald">Curso</span>`;
+      return `<span class="chip chip-indigo">Individual</span>`;
     }
 
     function renderEnviosTable(){
-      const tbody=$('envios-tbody');
-      tbody.innerHTML='';
+      const tbody=$('envios-tbody'); tbody.innerHTML='';
       const total = filtered.length;
       pageSize = parseInt($('pageSize').value || '10',10);
       const totalPages = Math.max(1, Math.ceil(total / pageSize));
@@ -668,7 +594,7 @@
       const pageItems = filtered.slice(start, start+pageSize);
 
       if(pageItems.length===0){
-        tbody.innerHTML = `<tr><td class="px-4 py-4 text-slate-500 italic" colspan="6">Sin envíos.</td></tr>`;
+        tbody.innerHTML = `<tr><td class="px-4 py-4 text-slate-500 italic" colspan="7">Sin envíos.</td></tr>`;
       }else{
         pageItems.forEach(r=>{
           const tr=document.createElement('tr');
@@ -678,6 +604,7 @@
             <td class="px-4 py-2">${r.parcial||''}</td>
             <td class="px-4 py-2">${r.semana||''}</td>
             <td class="px-4 py-2">${r.numeroTarea||''}</td>
+            <td class="px-4 py-2">${tipoChip(r.tipo, r.grupo)}</td>
             <td class="px-4 py-2">
               ${r.fileUrl ? `<a class="text-blue-600 underline" target="_blank" href="${r.fileUrl}">${r.filename||'Abrir'}</a>` : (r.filename||'')}
             </td>`;
@@ -687,11 +614,8 @@
 
       $('envios-count').textContent = `${total} registro${total===1?'':'s'}`;
       $('pageInfo').textContent = `${total===0?0:currentPage} / ${totalPages}`;
-
-      $('firstPage').disabled = currentPage<=1;
-      $('prevPage').disabled  = currentPage<=1;
-      $('nextPage').disabled  = currentPage>=totalPages;
-      $('lastPage').disabled  = currentPage>=totalPages;
+      $('firstPage').disabled = currentPage<=1; $('prevPage').disabled  = currentPage<=1;
+      $('nextPage').disabled  = currentPage>=totalPages; $('lastPage').disabled  = currentPage>=totalPages;
     }
 
     // Controles tabla
@@ -707,3 +631,4 @@
   </script>
 </body>
 </html>
+
