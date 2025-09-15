@@ -23,12 +23,16 @@
     .chip-emerald{ background:#ecfdf5; color:#065f46; }
     .chip-amber{ background:#fffbeb; color:#92400e; }
     .chip-slate{ background:#f1f5f9; color:#334155; }
+
+    /* Pulido de layout para eliminar huecos extra */
+    .section-tight { padding-top: 0; padding-bottom: 0; }
+    #envios-section.hidden { display: none; }
   </style>
 </head>
 <body class="min-h-screen bg-gradient-to-b from-slate-50 via-white to-indigo-50 text-slate-800">
 
-  <!-- Hero con altura justa (sin hueco) -->
-  <div class="py-10">
+  <!-- Hero compacto (sin huecos) -->
+  <div class="py-10 section-tight">
     <div class="mx-auto max-w-7xl grid grid-cols-1 lg:grid-cols-2 gap-8 items-center px-6">
       <aside class="hidden lg:block">
         <div class="flex items-center gap-4 mb-8 logo-row">
@@ -87,7 +91,7 @@
                 </p>
               </div>
               <div class="flex gap-2">
-                <a href="#envios-section" class="text-sm text-[var(--brand)] underline">Ver mis envíos</a>
+                <a id="btn-ver-envios" href="#envios-section" class="text-sm text-[var(--brand)] underline">Ver mis envíos</a>
                 <button id="btn-salir" class="text-sm text-slate-600 hover:text-red-600">Salir</button>
               </div>
             </div>
@@ -164,7 +168,7 @@
                 <p class="text-xs text-slate-500 mt-1">Formatos: PDF, DOCX, PPTX, XLSX, JPG, PNG (≤ 25 MB)</p>
               </div>
 
-              <!-- Renombrado (mostramos chip de tipo) -->
+              <!-- Renombrado (sugerencia con sufijo según tipo) -->
               <div class="md:col-span-2 bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-2">
                 <div class="flex items-center justify-between gap-2">
                   <p class="text-sm">
@@ -180,7 +184,7 @@
                   </div>
                   <button id="btn-aplicar-nombre" type="button" class="text-sm px-3 py-2 rounded-lg border border-slate-300 hover:bg-slate-100">Aplicar sugerido</button>
                 </div>
-                <p class="text-xs text-slate-500">El nombre sigue el formato estándar; el tipo se identifica con esta etiqueta y en la tabla.</p>
+                <p class="text-xs text-slate-500">El tipo se identifica en el nombre sugerido, en la tabla y en Drive.</p>
               </div>
 
               <div class="md:col-span-2 flex justify-end gap-3 mt-2">
@@ -197,19 +201,22 @@
     </div>
   </div>
 
-  <!-- ========== MIS ENVIOS ========== -->
-  <section id="envios-section" class="px-6 pb-14">
+  <!-- ========== MIS ENVIOS (oculto por defecto) ========== -->
+  <section id="envios-section" class="px-6 pb-10 hidden">
     <div class="max-w-7xl mx-auto card bg-white rounded-2xl p-6 md:p-8">
       <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
-        <h3 class="text-2xl font-semibold">Mis envíos</h3>
+        <div class="flex items-center gap-3">
+          <h3 class="text-2xl font-semibold">Mis envíos</h3>
+          <span id="envios-loading" class="hidden text-sm text-slate-500">Actualizando…</span>
+        </div>
         <div class="flex gap-3 items-center">
-          <div id="envios-loading" class="hidden text-sm text-slate-500">Actualizando…</div>
           <input id="searchEnvios" class="rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="Buscar...">
           <label class="text-sm text-slate-600">Por página
             <select id="pageSize" class="ml-2 rounded-md border border-slate-300 px-2 py-1 text-sm">
               <option>10</option><option>25</option><option>50</option><option>100</option>
             </select>
           </label>
+          <button id="btn-cerrar-envios" class="px-3 py-2 rounded-md border border-slate-300 text-sm hover:bg-slate-50">Cerrar</button>
         </div>
       </div>
 
@@ -223,6 +230,7 @@
               <th class="text-left px-4 py-2">Semana</th>
               <th class="text-left px-4 py-2">Tarea</th>
               <th class="text-left px-4 py-2">Tipo</th>
+              <th class="text-left px-4 py-2">Grupo</th>
               <th class="text-left px-4 py-2">Archivo</th>
             </tr>
           </thead>
@@ -267,20 +275,8 @@
     const now = ()=>Date.now();
 
     const saveSession = (student)=> localStorage.setItem(SESSION_KEY, JSON.stringify({ student, ts: now() }));
-    const loadSession = ()=>{
-      try{
-        const raw = localStorage.getItem(SESSION_KEY);
-        if(!raw) return null;
-        const obj = JSON.parse(raw);
-        if(!obj || !obj.student) return null;
-        const ageMin = (now() - (obj.ts||0)) / 60000;
-        if(ageMin > SESSION_TTL_MIN) { localStorage.removeItem(SESSION_KEY); return null; }
-        return obj.student;
-      }catch{ return null; }
-    };
-    const touchSession = ()=>{
-      try{ const raw = localStorage.getItem(SESSION_KEY); if(!raw) return; const obj = JSON.parse(raw); obj.ts = now(); localStorage.setItem(SESSION_KEY, JSON.stringify(obj)); }catch{}
-    };
+    const loadSession = ()=>{ try{ const raw = localStorage.getItem(SESSION_KEY); if(!raw) return null; const obj = JSON.parse(raw); if(!obj || !obj.student) return null; const ageMin = (now() - (obj.ts||0)) / 60000; if(ageMin > SESSION_TTL_MIN) { localStorage.removeItem(SESSION_KEY); return null; } return obj.student; }catch{ return null; } };
+    const touchSession = ()=>{ try{ const raw = localStorage.getItem(SESSION_KEY); if(!raw) return; const obj = JSON.parse(raw); obj.ts = now(); localStorage.setItem(SESSION_KEY, JSON.stringify(obj)); }catch{} };
     const clearSession = ()=> localStorage.removeItem(SESSION_KEY);
 
     /* ============ HELPERS ============ */
@@ -292,10 +288,23 @@
     const normId=(x)=> String(x||'').replace(/\D/g,'').replace(/^0+/, '') || '0';
 
     const abbr=(materia)=> MATERIA_ABBR[materia] || 'ABBR';
-    const nombreEsperado=(materia,semana,nombres,apellidos,num)=>{
+
+    // Sufijo textual según tipo
+    const tipoSuffix = (tipo) => {
+      const t = String(tipo||'INDIVIDUAL').toUpperCase();
+      if (t==='GRUPAL') return '_GRUPAL';
+      if (t==='CURSO')  return '_CURSO';
+      return ''; // Individual sin sufijo
+    };
+
+    const nombreEsperadoBase=(materia,semana,nombres,apellidos,num)=>{
       const nom=slugUpper(nombres.split(' ')[0]||'NOMBRE');
       const ape=slugUpper(apellidos.split(' ')[0]||'APELLIDO');
-      return `${abbr(materia)}_SEMANA_${semana}_${nom}_${ape}_${pad2(num)}`
+      return `${abbr(materia)}_SEMANA_${semana}_${nom}_${ape}_${pad2(num)}`;
+    };
+
+    const nombreEsperadoConTipo=(materia,semana,nombres,apellidos,num,tipo)=>{
+      return nombreEsperadoBase(materia,semana,nombres,apellidos,num) + tipoSuffix(tipo);
     };
 
     const toggleViews=(showLogin)=>{
@@ -323,7 +332,7 @@
 
     /* ============ ESTADO ENVIOS ============ */
     let alumno=null, currentExt='', enviosData=[], filtered=[], pageSize=10, currentPage=1;
-    let pollTimer=null;
+    let pollTimer=null; // desactivado por defecto
 
     (function fillMaterias(){
       const sel = $('materia'); MATERIAS.forEach(m=>{ const op=document.createElement('option'); op.value=m; op.textContent=m; sel.appendChild(op); });
@@ -338,7 +347,7 @@
 
     function updateChipTipo(tipo, integrantesCount=0){
       const chip = $('chip-tipo');
-      if (tipo==='GRUPAL'){ chip.className='chip chip-amber'; chip.textContent=`Grupal (${integrantesCount})`; }
+      if (tipo==='GRUPAL'){ chip.className='chip chip-amber'; chip.textContent=`Grupal (${integrantesCount||1})`; }
       else if (tipo==='CURSO'){ chip.className='chip chip-emerald'; chip.textContent='Curso'; }
       else { chip.className='chip chip-indigo'; chip.textContent='Individual'; }
     }
@@ -347,9 +356,10 @@
       const materia=$('materia').value || '';
       const semana=$('semana').value||'1';
       const num=$('numeroTarea').value||'1';
-      const ejemplo=nombreEsperado(materia, semana, alumno?.nombres||'NOMBRE', alumno?.apellidos||'APELLIDO', num);
-      $('nombre-ejemplo').textContent=ejemplo;
-      if(currentExt){ $('nombre-final').placeholder = `${ejemplo}.${currentExt}`; }
+      const tipo = (document.querySelector('input[name="tipoEntrega"]:checked')?.value || 'INDIVIDUAL').toUpperCase();
+      const base = nombreEsperadoConTipo(materia, semana, alumno?.nombres||'NOMBRE', alumno?.apellidos||'APELLIDO', num, tipo);
+      $('nombre-ejemplo').textContent=base;
+      if(currentExt){ $('nombre-final').placeholder = `${base}.${currentExt}`; }
     };
 
     $('btn-aplicar-nombre')?.addEventListener('click', ()=>{
@@ -372,7 +382,6 @@
       e.preventDefault();
       const cedula=$('cedula').value.trim(); if(!cedula) return;
       if (!validarIdentificacionEC(cedula)) return Swal.fire({icon:'warning',title:'Número inválido',text:'Revisa tu cédula (10) o RUC (13).'});
-
       Swal.showLoading();
       try{
         const res = await fetch(`${SCRIPT_URL}?action=auth&cedula=${encodeURIComponent(cedula)}`);
@@ -382,11 +391,12 @@
           $('alumno-nombre').textContent=`${alumno.nombres} ${alumno.apellidos}`;
           $('alumno-cedula').textContent=alumno.cedula;
           toggleViews(false); renderSemanas(); refreshEjemplo(); Swal.close();
+
           // bienvenida
           Swal.fire({icon:'success',title:`¡Hola, ${alumno.nombres.split(' ')[0]}!`,text:'Bienvenido al portal de entregas.',timer:1800,showConfirmButton:false});
-          document.getElementById('envios-section').classList.remove('hidden');
-          startPolling();
-          cargarMisEnvios();
+
+          // NO mostrar "Mis envíos" automáticamente (queda oculto)
+          stopPolling(); // no auto-poll
         }else{
           Swal.fire({icon:'error',title:'No autorizado',text:'La cédula no está registrada.'});
         }
@@ -398,8 +408,10 @@
       if(!isConfirmed) return;
       stopPolling();
       alumno=null; clearSession(); toggleViews(true); $('form-login').reset();
+      // Oculta y limpia "Mis envíos"
       document.getElementById('envios-section').classList.add('hidden');
       $('envios-tbody').innerHTML=''; $('envios-count').textContent='0 registros'; $('pageInfo').textContent='1 / 1';
+      $('searchEnvios').value='';
     });
 
     (function restore(){
@@ -408,9 +420,25 @@
       $('alumno-nombre').textContent=`${alumno.nombres} ${alumno.apellidos}`;
       $('alumno-cedula').textContent=alumno.cedula;
       toggleViews(false); renderSemanas(); refreshEjemplo();
-      document.getElementById('envios-section').classList.remove('hidden');
-      startPolling(); cargarMisEnvios();
+      // Mantener "Mis envíos" oculto hasta que el usuario lo pida
+      stopPolling();
     })();
+
+    // Mostrar / ocultar "Mis envíos" a demanda (AJAX)
+    $('btn-ver-envios').addEventListener('click', async (e)=>{
+      e.preventDefault();
+      if(!alumno) return;
+      const sec = $('envios-section');
+      sec.classList.remove('hidden');
+      await cargarMisEnvios(true);
+      sec.scrollIntoView({behavior:'smooth', block:'start'});
+      // Si quieres activar polling cuando está visible, descomenta:
+      // startPolling();
+    });
+    $('btn-cerrar-envios').addEventListener('click', ()=>{
+      $('envios-section').classList.add('hidden');
+      stopPolling();
+    });
 
     /* ============ TIPO: INDIVIDUAL/GRUPAL/CURSO ============ */
     let allStudents = []; let groupSelected = new Set();
@@ -419,6 +447,7 @@
     function showGrupoUI(show){
       $('grupo-container').classList.toggle('hidden', !show);
       if (!show) { groupSelected.clear(); updateChipTipo('INDIVIDUAL'); $('countSel').textContent='0 seleccionados'; }
+      refreshEjemplo();
     }
 
     async function ensureStudentsLoaded(){
@@ -455,11 +484,13 @@
           if (e.target.checked) groupSelected.add(ced); else groupSelected.delete(ced);
           $('countSel').textContent = `${groupSelected.size} seleccionados`;
           updateChipTipo('GRUPAL', groupSelected.size || 1);
+          refreshEjemplo();
         });
       });
 
       if (me) { groupSelected.add(me); $('countSel').textContent = `${groupSelected.size} seleccionados`; }
       updateChipTipo('GRUPAL', groupSelected.size || 1);
+      refreshEjemplo();
     }
 
     tipoRadios().forEach(r=>{
@@ -477,10 +508,9 @@
     $('buscarIntegrante').addEventListener('input', (e)=> paintStudents(e.target.value||''));
 
     /* ============ SUBIDA ============ */
-    $('parcial').addEventListener('change', ()=>{renderSemanas(); refreshEjemplo(); touchSession();});
-    $('semana').addEventListener('change', ()=>{refreshEjemplo(); touchSession();});
-    $('materia').addEventListener('change', ()=>{refreshEjemplo(); touchSession();});
-    $('numeroTarea').addEventListener('input', ()=>{refreshEjemplo(); touchSession();});
+    ['parcial','semana','materia','numeroTarea'].forEach(id=>{
+      $(id).addEventListener(id==='numeroTarea'?'input':'change', ()=>{ refreshEjemplo(); touchSession(); });
+    });
 
     $('form-upload').addEventListener('submit', async (e)=>{
       e.preventDefault();
@@ -497,14 +527,18 @@
         if (groupSelected.size < 2) return Swal.fire({icon:'info',title:'Selecciona el grupo',text:'Elige al menos 2 integrantes (incluyéndote).'});
       }
       if(file.size>SIZE_LIMIT) return Swal.fire({icon:'error',title:'Archivo muy grande',text:'Límite 25 MB.'});
-      const esperado=$('nombre-ejemplo').textContent.trim();
+
+      // Base esperada (sin sufijo) y sugerida (con sufijo según tipo)
+      const baseEsperada = nombreEsperadoBase(materia, semana, alumno?.nombres, alumno?.apellidos, num);
+      const baseSugerida = baseEsperada + tipoSuffix(tipo);
+
       const ext=(file.name.match(/\.([^.]+)$/)||['','pdf'])[1];
       const baseFinal=finalName.replace(/\.[^.]+$/,'').trim();
 
-      if(baseFinal!==esperado){
-        const { isConfirmed } = await Swal.fire({icon:'question',title:'Renombrar archivo',html:`El nombre debe ser <code>${esperado}</code>.<br><br>¿Deseas que el sistema lo renombre automáticamente antes de enviar?`,showCancelButton:true, confirmButtonText:'Sí, renombrar'});
+      if(baseFinal!==baseSugerida){
+        const { isConfirmed } = await Swal.fire({icon:'question',title:'Renombrar archivo',html:`El nombre sugerido es <code>${baseSugerida}</code>.<br><br>¿Deseas que el sistema lo aplique automáticamente?`,showCancelButton:true, confirmButtonText:'Sí, renombrar'});
         if(!isConfirmed) return;
-        finalName = `${esperado}.${ext}`;
+        finalName = `${baseSugerida}.${ext}`;
         $('nombre-final').value = finalName;
       }else if(!/\.[^.]+$/.test(finalName)){
         finalName = `${baseFinal}.${ext}`; $('nombre-final').value = finalName;
@@ -531,15 +565,14 @@
           $('form-upload').reset(); currentExt=''; renderSemanas(); $('nombre-final').value='';
           document.querySelector('input[name="tipoEntrega"][value="INDIVIDUAL"]').checked = true;
           showGrupoUI(false); groupSelected.clear(); updateChipTipo('INDIVIDUAL');
-          cargarMisEnvios(); touchSession();
-          document.getElementById('envios-section').scrollIntoView({behavior:'smooth'});
+          // No desplazar ni abrir "Mis envíos" automáticamente
         }else{
           Swal.fire({icon:'error',title:'Error',text:(data&&data.message)||`No se pudo subir. Estado ${res.status}`});
         }
       }catch{ Swal.fire({icon:'error',title:'Error de conexión',text:'Intenta nuevamente.'}); }
     });
 
-    /* ============ LISTAR + POLLING ============ */
+    /* ============ LISTAR + POLLING (a demanda) ============ */
     async function cargarMisEnvios(showLoading=true){
       if(!alumno) return;
       try{
@@ -564,23 +597,36 @@
       if (pollTimer){ clearInterval(pollTimer); pollTimer=null; }
       window.removeEventListener('focus', onFocusReload);
     }
-    function onFocusReload(){ cargarMisEnvios(false); }
+    function onFocusReload(){ const sec = $('envios-section'); if (!sec.classList.contains('hidden')) cargarMisEnvios(false); }
 
     function applyFilterAndRender(){
       const q = ($('searchEnvios').value||'').toLowerCase().trim();
       filtered = !q ? enviosData.slice() :
         enviosData.filter(r=>{
-          const hay = [r.fecha, r.materia, r.parcial, r.semana, r.numeroTarea, r.filename, r.tipo].map(x=>String(x||'').toLowerCase());
+          const hay = [r.fecha, r.materia, r.parcial, r.semana, r.numeroTarea, r.filename, r.tipo, (r.grupoLabel||'')].map(x=>String(x||'').toLowerCase());
           return hay.some(v=>v.includes(q));
         });
       currentPage = 1; renderEnviosTable();
     }
 
-    function tipoChip(tipo, grupo){
-      const g = (typeof grupo==='string' ? grupo : '');
-      if (String(tipo).toUpperCase()==='GRUPAL') return `<span class="chip chip-amber" title="${g?g:''}">Grupal</span>`;
-      if (String(tipo).toUpperCase()==='CURSO')  return `<span class="chip chip-emerald">Curso</span>`;
+    function tipoChip(tipo){
+      const t = String(tipo||'').toUpperCase();
+      if (t==='GRUPAL') return `<span class="chip chip-amber">Grupal</span>`;
+      if (t==='CURSO')  return `<span class="chip chip-emerald">Curso</span>`;
       return `<span class="chip chip-indigo">Individual</span>`;
+    }
+
+    function grupoLabelFromField(grupo){
+      // grupo puede venir como JSON string (["..."]) o "ALL" o vacío
+      try {
+        if (typeof grupo === 'string' && grupo.trim().startsWith('[')) {
+          const arr = JSON.parse(grupo);
+          const n = Array.isArray(arr) ? arr.length : 0;
+          return n>0 ? `${n} integrante${n===1?'':'s'}` : '';
+        }
+      } catch {}
+      if (grupo==='ALL' || (typeof grupo==='string' && grupo.toUpperCase()==='ALL')) return 'Todos';
+      return ''; // individual
     }
 
     function renderEnviosTable(){
@@ -594,17 +640,19 @@
       const pageItems = filtered.slice(start, start+pageSize);
 
       if(pageItems.length===0){
-        tbody.innerHTML = `<tr><td class="px-4 py-4 text-slate-500 italic" colspan="7">Sin envíos.</td></tr>`;
+        tbody.innerHTML = `<tr><td class="px-4 py-4 text-slate-500 italic" colspan="8">Sin envíos.</td></tr>`;
       }else{
         pageItems.forEach(r=>{
           const tr=document.createElement('tr');
+          const gLabel = r.grupoLabel || grupoLabelFromField(r.grupo);
           tr.innerHTML=`
             <td class="px-4 py-2">${r.fecha||''}</td>
             <td class="px-4 py-2">${r.materia||''}</td>
             <td class="px-4 py-2">${r.parcial||''}</td>
             <td class="px-4 py-2">${r.semana||''}</td>
             <td class="px-4 py-2">${r.numeroTarea||''}</td>
-            <td class="px-4 py-2">${tipoChip(r.tipo, r.grupo)}</td>
+            <td class="px-4 py-2">${tipoChip(r.tipo)}</td>
+            <td class="px-4 py-2">${gLabel||''}</td>
             <td class="px-4 py-2">
               ${r.fileUrl ? `<a class="text-blue-600 underline" target="_blank" href="${r.fileUrl}">${r.filename||'Abrir'}</a>` : (r.filename||'')}
             </td>`;
@@ -631,4 +679,3 @@
   </script>
 </body>
 </html>
-
