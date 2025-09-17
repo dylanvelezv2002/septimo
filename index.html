@@ -27,11 +27,11 @@
     .chip-amber{ background:#fffbeb; color:#92400e; }
     .chip-slate{ background:#f1f5f9; color:#334155; }
 
-    /* Pulido de layout y héroe compacto */
+    /* Hero compacto */
     .section-hero{ padding-block: 3.5rem; }
     @media (min-width:1024px){ .section-hero{ padding-block: 4.5rem; } }
 
-    /* Lista de características con check */
+    /* Lista con checks */
     .features{ list-style:none; margin-top:1rem; }
     .features li{ display:flex; align-items:flex-start; gap:.6rem; }
     .features li::before{
@@ -47,7 +47,7 @@
 </head>
 <body class="min-h-screen bg-gradient-to-b from-slate-50 via-white to-indigo-50 text-slate-800">
 
-  <!-- Hero compacto -->
+  <!-- Hero -->
   <div class="section-hero">
     <div class="mx-auto max-w-7xl grid grid-cols-1 lg:grid-cols-2 gap-8 items-center px-6">
       <aside class="hidden lg:block">
@@ -57,8 +57,6 @@
         </div>
         <h1 class="text-3xl font-semibold leading-tight">Gestión de Estudiantes</h1>
         <p class="mt-3 text-slate-600">Portal para subir tareas por semanas y parciales. Acceso por número de cédula.</p>
-
-        <!-- Lista con checks -->
         <ul class="features text-slate-700 text-sm">
           <li><span>Parciales: <b>1 y 2</b></span></li>
           <li><span>Validación del <b>nombre de archivo</b></span></li>
@@ -186,7 +184,7 @@
                 <p class="text-xs text-slate-500 mt-1">Formatos: PDF, DOCX, PPTX, XLSX, JPG, PNG (≤ 25 MB)</p>
               </div>
 
-              <!-- Renombrado (sugerencia con sufijo según tipo) -->
+              <!-- Renombrado -->
               <div class="md:col-span-2 bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-2">
                 <div class="flex items-center justify-between gap-2">
                   <p class="text-sm">
@@ -306,15 +304,12 @@
     const normId=(x)=> String(x||'').replace(/\D/g,'').replace(/^0+/, '') || '0';
 
     const abbr=(materia)=> MATERIA_ABBR[materia] || 'ABBR';
-
-    // Sufijo textual según tipo
     const tipoSuffix = (tipo) => {
       const t = String(tipo||'INDIVIDUAL').toUpperCase();
       if (t==='GRUPAL') return '_GRUPAL';
       if (t==='CURSO')  return '_CURSO';
-      return ''; // Individual
+      return '';
     };
-
     const nombreEsperadoBase=(materia,semana,nombres,apellidos,num)=>{
       const nom=slugUpper(nombres.split(' ')[0]||'NOMBRE');
       const ape=slugUpper(apellidos.split(' ')[0]||'APELLIDO');
@@ -346,27 +341,33 @@
       if (/^\d{13}$/.test(ident)) return validarCedulaEC(ident.slice(0,10));
       return false;
     }
-    // Máscara suave de entrada (solo dígitos, tope 13)
-    (() => {
-      const i = $('cedula');
-      if(!i) return;
-      i.addEventListener('input', () => { i.value = i.value.replace(/\D/g,'').slice(0,13); });
-    })();
+    // Máscara suave: solo dígitos, tope 13
+    (() => { const i = $('cedula'); if(!i) return; i.addEventListener('input', () => { i.value = i.value.replace(/\D/g,'').slice(0,13); }); })();
 
     /* ============ ESTADO ENVIOS ============ */
     let alumno=null, currentExt='', enviosData=[], filtered=[], pageSize=10, currentPage=1;
-    let pollTimer=null; // desactivado por defecto
+    let pollTimer=null;
 
     (function fillMaterias(){
-      const sel = $('materia'); ['Marco Legal para la Gestión del Riesgo','Administración','Sistemas de Información Geográfica Aplicado','Evaluación de Amenazas','Evaluación de Vulnerabilidades','Cambio Climático'].forEach(m=>{ const op=document.createElement('option'); op.value=m; op.textContent=m; sel.appendChild(op); });
+      const sel = $('materia'); ['Marco Legal para la Gestión del Riesgo','Administración','Sistemas de Información Geográfica Aplicado','Evaluación de Amenazas','Evaluación de Vulnerabilidades','Cambio Climático']
+        .forEach(m=>{ const op=document.createElement('option'); op.value=m; op.textContent=m; sel.appendChild(op); });
     })();
 
-    const renderSemanas=()=>{
-      const parcial=$('parcial').value, sel=$('semana');
-      sel.innerHTML='<option value="" disabled selected>Selecciona</option>';
-      if(!parcial) return;
-      for(let i=1;i<=SEMANAS_POR_PARCIAL;i++){ const op=document.createElement('option'); op.value=String(i); op.textContent=`Semana ${i}`; sel.appendChild(op); }
+    // ====== FIX: renderSemanas SIEMPRE llena 1..SEMANAS_POR_PARCIAL ======
+    const renderSemanas = (keepSelected=false)=>{
+      const sel = $('semana');
+      const prev = keepSelected ? sel.value : '';
+      sel.innerHTML = '<option value="" disabled selected>Selecciona</option>';
+      for (let i=1; i<=SEMANAS_POR_PARCIAL; i++) {
+        const op = document.createElement('option');
+        op.value = String(i);
+        op.textContent = `Semana ${i}`;
+        sel.appendChild(op);
+      }
+      if (keepSelected && prev && [...sel.options].some(o=>o.value===prev)) sel.value = prev;
     };
+    // Render inicial al cargar
+    document.addEventListener('DOMContentLoaded', ()=> renderSemanas());
 
     function updateChipTipo(tipo, integrantesCount=0){
       const chip = $('chip-tipo');
@@ -414,12 +415,8 @@
           $('alumno-nombre').textContent=`${alumno.nombres} ${alumno.apellidos}`;
           $('alumno-cedula').textContent=alumno.cedula;
           toggleViews(false); renderSemanas(); refreshEjemplo(); Swal.close();
-
-          // bienvenida
           Swal.fire({icon:'success',title:`¡Hola, ${alumno.nombres.split(' ')[0]}!`,text:'Bienvenido al portal de entregas.',timer:1800,showConfirmButton:false});
-
-          // "Mis envíos" permanece oculto hasta que el usuario lo solicite
-          stopPolling();
+          stopPolling(); // “Mis envíos” sigue oculto
         }else{
           Swal.fire({icon:'error',title:'No autorizado',text:'La cédula no está registrada.'});
         }
@@ -442,7 +439,7 @@
       $('alumno-nombre').textContent=`${alumno.nombres} ${alumno.apellidos}`;
       $('alumno-cedula').textContent=alumno.cedula;
       toggleViews(false); renderSemanas(); refreshEjemplo();
-      stopPolling(); // mantener oculto Mis envíos al inicio
+      stopPolling();
     })();
 
     // Mostrar / ocultar "Mis envíos"
@@ -453,7 +450,7 @@
       sec.classList.remove('hidden');
       await cargarMisEnvios(true);
       sec.scrollIntoView({behavior:'smooth', block:'start'});
-      // startPolling(); // (si quieres activar auto refresco al estar abierto)
+      // startPolling(); // activar si quieres refresco automático
     });
     $('btn-cerrar-envios').addEventListener('click', ()=>{
       $('envios-section').classList.add('hidden');
@@ -528,9 +525,11 @@
     $('buscarIntegrante').addEventListener('input', (e)=> paintStudents(e.target.value||''));
 
     /* ============ SUBIDA ============ */
-    ['parcial','semana','materia','numeroTarea'].forEach(id=>{
-      $(id).addEventListener(id==='numeroTarea'?'input':'change', ()=>{ refreshEjemplo(); touchSession(); });
-    });
+    // Al cambiar cualquier cosa, refrescar nombre y (en parcial) mantener semana
+    $('parcial').addEventListener('change', ()=>{ renderSemanas(true); refreshEjemplo(); touchSession(); });
+    $('semana').addEventListener('change', ()=>{ refreshEjemplo(); touchSession(); });
+    $('materia').addEventListener('change', ()=>{ refreshEjemplo(); touchSession(); });
+    $('numeroTarea').addEventListener('input', ()=>{ refreshEjemplo(); touchSession(); });
 
     $('form-upload').addEventListener('submit', async (e)=>{
       e.preventDefault();
@@ -584,7 +583,6 @@
           $('form-upload').reset(); currentExt=''; renderSemanas(); $('nombre-final').value='';
           document.querySelector('input[name="tipoEntrega"][value="INDIVIDUAL"]').checked = true;
           showGrupoUI(false); groupSelected.clear(); updateChipTipo('INDIVIDUAL');
-          // No abrir "Mis envíos" automáticamente
         }else{
           Swal.fire({icon:'error',title:'Error',text:(data&&data.message)||`No se pudo subir. Estado ${res.status}`});
         }
@@ -634,9 +632,7 @@
       if (t==='CURSO')  return `<span class="chip chip-emerald">Curso</span>`;
       return `<span class="chip chip-indigo">Individual</span>`;
     }
-
     function grupoLabelFromField(grupo){
-      // grupo puede venir como JSON string (["..."]) o "ALL" o vacío
       try {
         if (typeof grupo === 'string' && grupo.trim().startsWith('[')) {
           const arr = JSON.parse(grupo);
@@ -645,7 +641,7 @@
         }
       } catch {}
       if (grupo==='ALL' || (typeof grupo==='string' && grupo.toUpperCase()==='ALL')) return 'Todos';
-      return ''; // individual
+      return '';
     }
 
     function renderEnviosTable(){
